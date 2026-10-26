@@ -15,7 +15,7 @@
  *    (clave con versión de esquema: invalida sin migración sucia).
  *  - Token bucket (core/rate-limit.js) + reintentos con backoff
  *    exponencial SOLO ante fallos transitorios (red/timeout/5xx/429).
- *    Los 404 de negocio ("nothing here") nunca se reintentan.
+ *    Los 404 de negocio (sin resultados / id inexistente) nunca se reintentan.
  *  - Abort de peticiones en vuelo al abandonar la página (pagehide).
  */
 
@@ -74,6 +74,7 @@ async function pedirUnaVez(ruta) {
     // 429 = rate limit del SERVIDOR: reintenable con backoff.
     if (respuesta.status === 429) {
       const error = new Error('La API solicitó calma (429). Reintentando…');
+      error.status = respuesta.status;
       error.reintentable = true;
       throw error;
     }
@@ -85,6 +86,9 @@ async function pedirUnaVez(ruta) {
     if (!respuesta.ok) {
       const motivo = datos?.error || `Error HTTP ${respuesta.status}`;
       const error = new Error(motivo);
+      // El status permite distinguir 404 de negocio de fallos reales
+      // sin depender del texto (la API cambia sus mensajes).
+      error.status = respuesta.status;
       // 5xx = fallo del servidor => transitorio; 4xx de negocio => no.
       error.reintentable = respuesta.status >= 500;
       throw error;
@@ -303,7 +307,7 @@ export async function obtenerPersonajes(pagina = 1) {
  * si no está, hace el fetch a la API.
  * @param {number|string} id - Id del personaje.
  * @returns {Promise<Object>} Personaje completo.
- * @throws {Error} "There is nothing here" (id inexistente) u otro fallo.
+ * @throws {Error} Con `.status` HTTP (404 = id inexistente) u otro fallo.
  */
 export async function obtenerPersonaje(id) {
   // Se sanea el id: solo dígitos, evita rutas raras en la URL.
@@ -323,9 +327,9 @@ export async function obtenerPersonaje(id) {
 /**
  * Busca personajes con los filtros del endpoint /character (Fase 3).
  * Acepta name + status + species combinados (la API los soporta en la
- * misma query). Los 404 "Nothing found" de la API son "sin resultados",
- * no un error de sistema. Los resultados filtrados NO se cachean por
- * página (las claves de caché son para el catálogo sin filtros).
+ * misma query). Los 404 de la API son "sin resultados", no un error de
+ * sistema. Los resultados filtrados NO se cachean por página (las claves
+ * de caché son para el catálogo sin filtros).
  * @param {{nombre?: string, estado?: string, especie?: string,
  *          pagina?: number}} [filtros]
  * @returns {Promise<Array<Object>>} Coincidencias (vacío si no hay).
@@ -343,11 +347,9 @@ export async function buscarPersonajes({ nombre = '', estado = '', especie = '',
     const datos = await pedirJson(`/character${query ? `?${query}` : ''}`);
     return Array.isArray(datos?.results) ? datos.results : [];
   } catch (error) {
-    // La API responde 404 "Nothing found" cuando no hay coincidencias:
-    // eso NO es un error de sistema, es "sin resultados".
-    if (error.message.toLowerCase().includes('nothing found')) {
-      return [];
-    }
+    // La API responde 404 con { error: "There is nothing here" } cuando
+    // no hay coincidencias: es un resultado vacío, no un fallo de sistema.
+    if (error.status === 404) return [];
     throw error;
   }
 }

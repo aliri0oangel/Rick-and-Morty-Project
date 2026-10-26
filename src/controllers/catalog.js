@@ -208,8 +208,8 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       if (miSecuencia !== secuencia) return;
       console.error('[index] Error cargando personajes:', error);
-      // 404 "There is nothing here" al paginar = fin natural, no un error.
-      if (!reemplazar && /nothing here/i.test(error.message)) {
+      // 404 al paginar = fin natural de la lista, no un error.
+      if (!reemplazar && error.status === 404) {
         mostrarCargarMas(false);
         return;
       }

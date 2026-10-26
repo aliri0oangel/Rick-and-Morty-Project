@@ -51,7 +51,7 @@ export async function instalarApiMock(page) {
     if (idRuta) {
       const personaje = PERSONAJES.find((p) => p.id === Number(idRuta[1]));
       if (!personaje) {
-        await ruta.fulfill({ status: 404, json: { error: 'Personaje no encontrado' } });
+        await ruta.fulfill({ status: 404, json: { error: 'Character not found' } });
         return;
       }
       await ruta.fulfill({ json: personaje });

@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       // d) Id inexistente (404 de la API) o fallo de red/timeout.
       console.error('[detail] Error cargando detalle:', error);
-      const noExiste = /nothing here/i.test(error.message);
+      const noExiste = error.status === 404;
       renderizarErrorDetalle(noExiste ? 'Ese personaje no existe en la API.' : error.message);
     }
   }
