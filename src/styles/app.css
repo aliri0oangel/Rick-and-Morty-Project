@@ -1,0 +1,111 @@
+/**
+ * ============================================================================
+ * app.css — Entrada única de estilos (Tailwind CSS v4) — Web-Manual
+ * ============================================================================
+ * Build : `pnpm build`  → dist/app.css (minificado) — PLAN.md T0.2
+ * Watch : `pnpm watch`  → reconstruye ante cambios en fuentes detectadas
+ * Nota  : se eliminó el CDN de Tailwind (@tailwindcss/browser) y su estilo
+ *         inline por página; ahora TODO pasa por este build local (PLAN.md §5).
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Imports (deben ir antes que cualquier otra regla)                           */
+/* -------------------------------------------------------------------------- */
+
+/* Framework: utilidades + variantes + sistema de temas de Tailwind v4 */
+@import 'tailwindcss';
+
+/* Capa semántica de tokens + base global (Fase 1 / T1.2) —
+   define --app-*, --brand, --info, --danger y la tipografía base. */
+@import './tokens.css';
+
+/* Componentes de estilo con dark mode (Fase 1 / T1.4) —
+   botones, campos, badges, cards, skeleton. Migra y reemplaza a
+   css/customCss.css (validaciones incluidas, ahora con tema oscuro). */
+@import './components.css';
+
+/* -------------------------------------------------------------------------- */
+/* Fuentes de contenido (detección explícita además de la automática)          */
+/* Las clases de Tailwind viven en los 6 HTML y en strings dentro de los JS.   */
+/* -------------------------------------------------------------------------- */
+@source '../../index.html';
+@source '../../login.html';
+@source '../../register.html';
+@source '../../favorites.html';
+@source '../../character.html';
+@source '../../mi_account.html';
+@source '../**/*.js';
+
+/* Safelist de utilities semánticas (Fase 1 / T1.2): Tailwind JIT solo emite
+   lo que detecta en los sources; estas utilities se fuerzan para que existan
+   desde ya (CSS a mano, Fase 3 y tests de tokens sin depender del markup). */
+@source inline(
+  'bg-app bg-panel text-ink text-dim border-line text-brand bg-brand border-brand text-info bg-info border-info text-danger bg-danger border-danger bg-brand-soft bg-info-soft bg-danger-soft'
+);
+
+/* -------------------------------------------------------------------------- */
+/* Variante "dark" por CLASE (.dark en <html>) — controlada por tema.js        */
+/* (Tailwind v4 por defecto usa prefers-color-scheme; el proyecto necesita el  */
+/*  toggle manual con persistencia en cookie).                                 */
+/* -------------------------------------------------------------------------- */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* -------------------------------------------------------------------------- */
+/* Tokens iniciales — Dirección de diseño C "Dimensión CRT" (PLAN.md §3.3/3.4) */
+/* `static`: se emiten SIEMPRE como variables CSS (aunque ninguna utilidad las  */
+/* use todavía), de modo que el CSS a mano y el JS puedan leerlas desde el     */
+/* primer momento. La profundización (tokens.css, componentes, glow) va en      */
+/* Fase 1.                                                                     */
+/* -------------------------------------------------------------------------- */
+@theme static {
+  /* Tipografía */
+  --font-display: 'VT323', monospace;
+  --font-terminal: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Paleta CRT — dark (tema por defecto) */
+  --color-crt-bg: #0b0c10;
+  --color-crt-panel: #12141a;
+  --color-crt-ink: #ffd9a0;
+  --color-crt-dim: #9b8b74;
+  --color-crt-line: #2b2f3a;
+
+  /* Modo día — light */
+  --color-day-bg: #f4efe6;
+  --color-day-panel: #fffdf8;
+  --color-day-ink: #2a2418;
+  --color-day-dim: #6f6455;
+  --color-day-line: #d9d1c2;
+
+  /* Acentos (pares dark/light). Los *-soft (día) se oscurecieron para
+     cumplir contraste AA 4.5:1 sobre superficies claras — PLAN.md §3.7. */
+  --color-phos: #ffb000; /* fósforo ámbar — primario */
+  --color-phos-soft: #8f5a00; /* día: ocre (AA: texto y botones) */
+  --color-cy: #39d7e6; /* cian — info */
+  --color-cy-soft: #0b6b78; /* día: teal oscuro (AA) */
+  --color-mg: #ff4fa3; /* magenta — peligro/favorito */
+  --color-mg-soft: #c0155a; /* día: frambuesa oscuro (AA) */
+}
+
+/* -------------------------------------------------------------------------- */
+/* Tokens semánticos → utilities (Fase 1 / T1.2)                               */
+/* `inline`: la utility se genera con la referencia a la variable, no con el   */
+/* valor resuelto, así bg-app / text-ink / text-brand… CAMBIAN con el tema     */
+/* activo sin necesidad de variantes dark: por elemento.                        */
+/* Utilities: bg-app · bg-panel · text-ink · text-dim · border-line ·          */
+/*            text|bg|border-brand · info · danger · bg-*-soft                 */
+/* -------------------------------------------------------------------------- */
+@theme inline {
+  --color-app: var(--app-bg);
+  --color-panel: var(--app-panel);
+  --color-ink: var(--app-ink);
+  --color-dim: var(--app-dim);
+  --color-line: var(--app-line);
+
+  --color-brand: var(--brand);
+  --color-info: var(--info);
+  --color-danger: var(--danger);
+
+  --color-brand-soft: var(--brand-soft);
+  --color-info-soft: var(--info-soft);
+  --color-danger-soft: var(--danger-soft);
+}

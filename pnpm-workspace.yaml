@@ -1,0 +1,5 @@
+# Configuración de pnpm (el proyecto usa pnpm en exclusiva — PLAN.md §5)
+# allowBuilds: @parcel/watcher es el módulo nativo requerido por `tailwindcss --watch`
+# (@tailwindcss/cli). Aprobado con `pnpm approve-builds @parcel/watcher`.
+allowBuilds:
+  '@parcel/watcher': true

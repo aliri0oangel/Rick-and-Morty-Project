@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- CSP de defensa en profundidad (ver comentario detallado en index.html) -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://rickandmortyapi.com data:; connect-src https://rickandmortyapi.com; object-src 'none'; base-uri 'self'; form-action 'self'"
+    />
+    <title>Página no encontrada · Web-Manual</title>
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" id="meta-theme-color" content="#0b0c10" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <!-- CSS crítico inline (T5.1): fondo por tema antes de dist/app.css -->
+    <style>
+      html {
+        background-color: #0b0c10;
+      }
+      html:not(.dark) {
+        background-color: #f4efe6;
+      }
+      body {
+        margin: 0;
+      }
+    </style>
+
+    <!-- Tipografías (§3.4): VT323 display + IBM Plex Mono cuerpo/datos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=VT323&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./dist/app.css" />
+    <!-- Tema antes del primer pintado (sin flash) -->
+    <script src="./src/services/theme-boot.js"></script>
+  </head>
+  <body>
+    <!-- 404 temática (Fase 6 / T6.2): "te has perdido en una dimensión" -->
+    <main
+      class="min-h-screen flex flex-col items-center justify-center p-6 text-center"
+      role="main"
+    >
+      <h1 class="glitch font-display text-5xl sm:text-6xl text-ink" data-text="ERROR 404">
+        ERROR 404
+      </h1>
+      <p class="text-dim max-w-md mt-3">
+        Te has perdido en una dimensión sin coordenadas. Ni Jerry sabría volverte a traer desde aquí
+        — vuelve al portal principal.
+      </p>
+      <div class="flex flex-wrap gap-3 justify-center mt-6">
+        <a href="./index.html" class="btn btn-primary">Volver al catálogo</a>
+        <a href="./login.html" class="btn btn-ghost">Ir al acceso</a>
+      </div>
+    </main>
+  </body>
+</html>

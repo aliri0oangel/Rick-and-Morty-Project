@@ -1,0 +1,10 @@
+# robots.txt — Web-Manual (Fase 6 / T6.2)
+# Nota de despliegue: al publicar, sustituir web-manual.example.com por
+# el dominio real y regenerar sitemap.xml con ese origen.
+User-agent: *
+Allow: /
+Disallow: /login.html
+Disallow: /register.html
+Disallow: /mi_account.html
+
+Sitemap: https://web-manual.example.com/sitemap.xml

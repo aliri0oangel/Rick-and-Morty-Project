@@ -1,0 +1,10 @@
+node_modules/
+dist/
+pnpm-lock.yaml
+reports/
+playwright-report/
+test-results/
+.opencode/
+reportes
+playwright-report
+test-results

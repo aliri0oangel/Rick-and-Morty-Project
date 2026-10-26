@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- CSP de defensa en profundidad (ver comentario detallado en index.html) -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://rickandmortyapi.com data:; connect-src https://rickandmortyapi.com; object-src 'none'; base-uri 'self'; form-action 'self'"
+    />
+    <title>Iniciar sesión · Web-Manual</title>
+    <!-- SEO (T6.1) -->
+    <meta
+      name="description"
+      content="Accede a tu terminal interdimensional: inicia sesión para gestionar tus personajes favoritos de Rick and Morty."
+    />
+    <link rel="canonical" href="./login.html" />
+    <meta name="theme-color" id="meta-theme-color" content="#0b0c10" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Web-Manual" />
+    <meta property="og:locale" content="es_ES" />
+    <meta property="og:title" content="Iniciar sesión · Web-Manual" />
+    <meta
+      property="og:description"
+      content="Accede a tu terminal interdimensional y gestiona tus favoritos."
+    />
+    <meta property="og:url" content="./login.html" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Iniciar sesión · Web-Manual" />
+    <meta
+      name="twitter:description"
+      content="Accede a tu terminal interdimensional y gestiona tus favoritos."
+    />
+    <!-- CSS crítico inline (T5.1): fondo por tema antes de dist/app.css -->
+    <style>
+      html {
+        background-color: #0b0c10;
+      }
+      html:not(.dark) {
+        background-color: #f4efe6;
+      }
+      body {
+        margin: 0;
+      }
+    </style>
+    <!-- Tailwind v4 compilado en local (pnpm build → dist/app.css;
+         incluye la variante dark y las clases de validación) -->
+    <!-- Tipografías (§3.4): VT323 display + IBM Plex Mono cuerpo/datos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=VT323&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./dist/app.css" />
+    <!-- Tema antes del primer pintado (sin flash) -->
+    <script src="./src/services/theme-boot.js"></script>
+  </head>
+  <body>
+    <section id="login" class="relative flex flex-col items-center justify-center min-h-screen p-4">
+      <!-- Toggle de tema (esta página no tiene header) -->
+      <button
+        type="button"
+        id="btn-tema"
+        aria-label="Cambiar tema"
+        class="btn btn-ghost p-2 rounded-full absolute top-4 right-4"
+      ></button>
+
+      <!-- Terminal de portal (T3.1): título display glitch -->
+      <h1 class="glitch font-display text-4xl text-ink mb-4" data-text="LogIn">Bienvenido</h1>
+
+      <form
+        action=""
+        id="form_login"
+        novalidate
+        class="tubo-card cursor-default p-8 w-full max-w-md space-y-4"
+      >
+        <div>
+          <label for="correo" class="block text-ink font-medium mb-2">Correo:</label>
+          <input type="email" id="correo" name="correo" autocomplete="email" class="campo w-full" />
+        </div>
+
+        <div>
+          <label for="password" class="block text-ink font-medium mb-2">Contraseña:</label>
+          <input type="password" id="password" name="password" class="campo w-full" />
+        </div>
+
+        <!--
+          3er mecanismo de almacenamiento (Cookies): preferencia de UI
+          "recordar mi correo". Propósito distinto a LocalStorage
+          (usuarios/favoritos) y SessionStorage (sesión viva).
+        -->
+        <div class="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="recordar_correo"
+            name="recordar_correo"
+            class="w-4 h-4 accent-brand"
+          />
+          <label for="recordar_correo" class="text-sm text-dim">Recordar mi correo</label>
+        </div>
+
+        <!-- role=alert: el lector anuncia el fallo de login en cuanto aparece -->
+        <p
+          id="error-general"
+          class="aviso aviso-error hidden"
+          role="alert"
+          aria-live="assertive"
+        ></p>
+
+        <button type="submit" class="btn btn-primary w-full">Iniciar Sesión</button>
+
+        <p class="text-sm text-dim">
+          ¿No tienes cuenta?
+          <a href="./register.html" class="text-brand hover:underline">Regístrate</a>
+        </p>
+      </form>
+    </section>
+
+    <script type="module" src="./src/services/theme-toggle.js"></script>
+    <script type="module" src="./src/controllers/login.js"></script>
+  </body>
+</html>

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- CSP de defensa en profundidad (ver comentario detallado en index.html) -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://rickandmortyapi.com data:; connect-src https://rickandmortyapi.com; object-src 'none'; base-uri 'self'; form-action 'self'"
+    />
+    <title>Mis favoritos · Web-Manual</title>
+    <!-- SEO (T6.1) -->
+    <meta
+      name="description"
+      content="Tu archivo personal de personajes favoritos de Rick and Morty, guardado en tu terminal."
+    />
+    <link rel="canonical" href="./favorites.html" />
+    <meta name="theme-color" id="meta-theme-color" content="#0b0c10" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Web-Manual" />
+    <meta property="og:locale" content="es_ES" />
+    <meta property="og:title" content="Mis favoritos · Web-Manual" />
+    <meta property="og:description" content="Tu archivo personal de personajes del multiverso." />
+    <meta property="og:url" content="./favorites.html" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Mis favoritos · Web-Manual" />
+    <meta name="twitter:description" content="Tu archivo personal de personajes del multiverso." />
+    <!-- CSS crítico inline (T5.1): fondo por tema antes de dist/app.css -->
+    <style>
+      html {
+        background-color: #0b0c10;
+      }
+      html:not(.dark) {
+        background-color: #f4efe6;
+      }
+      body {
+        margin: 0;
+      }
+    </style>
+
+    <!-- Tailwind v4 compilado en local (pnpm build → dist/app.css):
+         utilidades + tokens + componentes (validación incluida, con dark). -->
+    <!-- Tipografías (§3.4): VT323 display + IBM Plex Mono cuerpo/datos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=VT323&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./dist/app.css" />
+
+    <!-- Tema antes del primer pintado (sin flash) -->
+    <script src="./src/services/theme-boot.js"></script>
+  </head>
+  <body>
+    <!-- Header inyectado por src/ui/header.js (nav + tema + sesión). -->
+
+    <main id="contenido" class="min-h-screen">
+      <div class="max-w-7xl mx-auto px-6 pt-10 pb-12">
+        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
+          <div>
+            <h1 class="glitch font-display text-4xl text-ink" data-text="Mis favoritos">
+              Mis favoritos
+            </h1>
+          </div>
+          <a href="./index.html" class="btn btn-ghost gap-2"> &larr; Volver al catálogo </a>
+        </div>
+
+        <!--
+          ZONA DE ESTADOS + GRID: la monta src/ui/page-states.js (misma
+          fábrica que el catálogo, con textos propios de esta página).
+        -->
+        <div id="zona-favoritos"></div>
+      </div>
+    </main>
+
+    <script type="module" src="./src/services/theme-toggle.js"></script>
+    <script type="module" src="./src/controllers/favorites-page.js"></script>
+  </body>
+</html>

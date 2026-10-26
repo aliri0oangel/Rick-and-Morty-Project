@@ -1,0 +1,169 @@
+/**
+ * ============================================================================
+ * tokens.css — Sistema de tokens de diseño (Fase 1 / PLAN.md T1.2)
+ * ============================================================================
+ * Estructura:
+ *   1) CAPA SEMÁNTICA — variables reutilizables (--app-*, --brand, --info,
+ *      --danger, --on-*) que APUNTAN a la paleta cruda según el tema activo.
+ *      La paleta cruda vive en el @theme static de app.css (fuente única).
+ *   2) EFECTOS Y MOVIMIENTO — radios, glow, duraciones (§3.5).
+ *   3) BASE GLOBAL — tipografía (VT323 display + IBM Plex Mono cuerpo),
+ *      scrollbars, ::selection, :focus-visible y guarda reduced-motion (§3.4).
+ *
+ * El tema: `:root` = modo día (light) · `.dark` en <html> = CRT oscuro.
+ * El cambio de valores es instantáneo (custom properties) y las utilities
+ * semánticas (bg-app, text-ink, text-brand…) siguen el tema vía @theme inline.
+ */
+
+/* ==========================================================================
+   1) CAPA SEMÁNTICA — MODO DÍA (light)
+   ========================================================================== */
+:root {
+  color-scheme: light;
+
+  /* Superficies y texto */
+  --app-bg: var(--color-day-bg); /* fondo de página */
+  --app-panel: var(--color-day-panel); /* tarjetas, inputs, header */
+  --app-ink: var(--color-day-ink); /* texto principal */
+  --app-dim: var(--color-day-dim); /* texto secundario */
+  --app-line: var(--color-day-line); /* bordes, reglas */
+
+  /* Acentos (ajustados a contraste AA sobre superficies del tema — §3.7) */
+  --brand: var(--color-phos-soft); /* primario: fósforo ámbar */
+  --info: var(--color-cy-soft); /* cian: estados vivos, énfasis */
+  --danger: var(--color-mg-soft); /* magenta: errores, muertos, favoritos */
+
+  /* Texto sobre fondos sólidos de acento (botones) */
+  --on-brand: #fffdf8;
+  --on-info: #fffdf8;
+  --on-danger: #fffdf8;
+
+  /* Fondos tintados suaves (chips, alertas) */
+  --brand-soft: color-mix(in srgb, var(--brand) 14%, transparent);
+  --info-soft: color-mix(in srgb, var(--info) 14%, transparent);
+  --danger-soft: color-mix(in srgb, var(--danger) 12%, transparent);
+
+  /* Efecto firma: intensidad de los overlays CRT (scanlines/viñeta) */
+  --fx: 0.15;
+}
+
+/* ==========================================================================
+   1) CAPA SEMÁNTICA — CRT OSCURO (.dark) — tema temático por defecto
+   ========================================================================== */
+.dark {
+  color-scheme: dark;
+
+  --app-bg: var(--color-crt-bg);
+  --app-panel: var(--color-crt-panel);
+  --app-ink: var(--color-crt-ink);
+  --app-dim: var(--color-crt-dim);
+  --app-line: var(--color-crt-line);
+
+  --brand: var(--color-phos);
+  --info: var(--color-cy);
+  --danger: var(--color-mg);
+
+  --on-brand: #0b0c10; /* texto oscuro sobre ámbar/cian neón */
+  --on-info: #0b0c10;
+  --on-danger: #0b0c10;
+
+  --brand-soft: color-mix(in srgb, var(--brand) 16%, transparent);
+  --info-soft: color-mix(in srgb, var(--info) 16%, transparent);
+  --danger-soft: color-mix(in srgb, var(--danger) 14%, transparent);
+
+  --fx: 1; /* overlays CRT a intensidad completa */
+}
+
+/* Glow por tema: declarado en AMBOS bloques para que var(--brand) se
+   resuelva contra la paleta del tema activo (resolución en el mismo elemento). */
+:root {
+  --glow-brand: 0 0 18px color-mix(in srgb, var(--brand) 45%, transparent);
+  --glow-info: 0 0 14px color-mix(in srgb, var(--info) 40%, transparent);
+}
+.dark {
+  --glow-brand: 0 0 22px color-mix(in srgb, var(--brand) 55%, transparent);
+  --glow-info: 0 0 18px color-mix(in srgb, var(--info) 45%, transparent);
+}
+
+/* ==========================================================================
+   2) EFECTOS Y MOVIMIENTO (§3.5 — sencillo y señal-alta)
+   ========================================================================== */
+:root,
+.dark {
+  --r-ctl: 8px; /* radio de controles: inputs, botones */
+  --r-card: 14px; /* radio "marco de tubo" de las cards */
+  --trans: 200ms; /* duración base de transiciones */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1); /* salida suave estándar */
+}
+
+/* ==========================================================================
+   3) BASE GLOBAL
+   ========================================================================== */
+
+/* Cuerpo: IBM Plex Mono (§3.4) sobre la superficie del tema activo */
+body {
+  font-family: var(--font-terminal);
+  font-size: 0.94rem;
+  line-height: 1.55;
+  background-color: var(--app-bg);
+  color: var(--app-ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Títulos: VT323 (display temático). Nota: los HTML aún llevan utilidades
+   font-bold heredadas; Fase 3 las retira al reestilizar cada página. */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+/* Scrollbars finas teñidas por el tema */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--app-line) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--app-line);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand);
+}
+
+/* Selección de texto con los acentos del tema */
+::selection {
+  background: color-mix(in srgb, var(--brand) 45%, transparent);
+  color: var(--app-ink);
+}
+
+/* Foco visible consistente y con glow (a11y — §3.7) */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Guarda global de movimiento reducido (a11y): anula animaciones y
+   transiciones no esenciales. Los elementos la respetan vía media query
+   y Tailwind también ofrece motion-safe:/motion-reduce: por componente. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,25 @@
+# Dependencias
+node_modules/
+
+# Build: se versiona solo el CSS compilado que sirve la app
+dist/*
+!dist/app.css
+
+# Reportes de pruebas / auditorías (Fases 9-10)
+playwright-report/
+test-results/
+reports/
+reportes/
+
+# Herramientas del agente (no forman parte de la aplicación)
+.opencode/
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+pnpm-debug.log*

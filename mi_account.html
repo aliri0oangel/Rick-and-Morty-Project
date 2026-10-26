@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- CSP de defensa en profundidad (ver comentario detallado en index.html) -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://rickandmortyapi.com data:; connect-src https://rickandmortyapi.com; object-src 'none'; base-uri 'self'; form-action 'self'"
+    />
+    <title>Mi cuenta · Web-Manual</title>
+    <!-- SEO (T6.1) -->
+    <meta name="robots" content="noindex" />
+    <meta
+      name="description"
+      content="Gestiona los datos de tu cuenta: nombre, correo y contraseña de tu terminal interdimensional."
+    />
+    <link rel="canonical" href="./mi_account.html" />
+    <meta name="theme-color" id="meta-theme-color" content="#0b0c10" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Web-Manual" />
+    <meta property="og:locale" content="es_ES" />
+    <meta property="og:title" content="Mi cuenta · Web-Manual" />
+    <meta property="og:description" content="Gestiona los datos de tu terminal interdimensional." />
+    <meta property="og:url" content="./mi_account.html" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Mi cuenta · Web-Manual" />
+    <meta
+      name="twitter:description"
+      content="Gestiona los datos de tu terminal interdimensional."
+    />
+    <!-- CSS crítico inline (T5.1): fondo por tema antes de dist/app.css -->
+    <style>
+      html {
+        background-color: #0b0c10;
+      }
+      html:not(.dark) {
+        background-color: #f4efe6;
+      }
+      body {
+        margin: 0;
+      }
+    </style>
+
+    <!-- Tailwind v4 compilado en local (pnpm build → dist/app.css): utilidades
+         + variante dark + clases de validación (errorValidacion/exitoValidacion) -->
+    <!-- Tipografías (§3.4): VT323 display + IBM Plex Mono cuerpo/datos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=VT323&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./dist/app.css" />
+
+    <!-- Tema antes del primer pintado (sin flash) -->
+    <script src="./src/services/theme-boot.js"></script>
+  </head>
+  <body>
+    <!-- Header inyectado por src/ui/header.js (nav + tema + sesión). -->
+
+    <main id="contenido" class="min-h-screen flex flex-col items-center p-4 pt-10 pb-12">
+      <!-- Terminal de perfil (T3.5): título display glitch -->
+      <h1 class="glitch font-display text-4xl text-ink mb-6" data-text="Mi cuenta">Mi cuenta</h1>
+
+      <!-- Resumen de perfil (nombre, correo, nº de favoritos) — account.js -->
+      <div id="resumen-cuenta"></div>
+
+      <!--
+        Formulario responsive: w-full max-w-md => full-width en móvil
+        y tarjeta centrada de 448px máximo en tablet/escritorio.
+        Los 5 campos los construye account.js con el componente FormField
+        (label + input.campo + error aria-live) => cero marcado repetido.
+      -->
+      <form
+        id="form_cuenta"
+        novalidate
+        class="tubo-card cursor-default p-8 w-full max-w-md space-y-4"
+      >
+        <!-- Mensaje general de error (fuerza de registro, storage...) -->
+        <p id="error-general" class="aviso aviso-error hidden text-sm" role="alert"></p>
+
+        <div id="campos-cuenta"><!-- Campos inyectados por FormField --></div>
+
+        <div class="flex flex-col gap-3 pt-2">
+          <button type="submit" id="btn_guardar" class="btn btn-primary w-full">
+            Guardar cambios
+          </button>
+          <a href="./index.html" class="btn btn-ghost w-full text-center"> Volver al catálogo </a>
+        </div>
+      </form>
+    </main>
+
+    <script type="module" src="./src/services/theme-toggle.js"></script>
+    <script type="module" src="./src/controllers/account.js"></script>
+  </body>
+</html>

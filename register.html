@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- CSP de defensa en profundidad (ver comentario detallado en index.html) -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://rickandmortyapi.com data:; connect-src https://rickandmortyapi.com; object-src 'none'; base-uri 'self'; form-action 'self'"
+    />
+    <title>Registro · Web-Manual</title>
+    <!-- SEO (T6.1) -->
+    <meta
+      name="description"
+      content="Crea tu cuenta en Web-Manual y empieza a guardar tus personajes favoritos de Rick and Morty."
+    />
+    <link rel="canonical" href="./register.html" />
+    <meta name="theme-color" id="meta-theme-color" content="#0b0c10" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Web-Manual" />
+    <meta property="og:locale" content="es_ES" />
+    <meta property="og:title" content="Registro · Web-Manual" />
+    <meta
+      property="og:description"
+      content="Crea tu cuenta y guarda tus favoritos del multiverso."
+    />
+    <meta property="og:url" content="./register.html" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Registro · Web-Manual" />
+    <meta
+      name="twitter:description"
+      content="Crea tu cuenta y guarda tus favoritos del multiverso."
+    />
+    <!-- CSS crítico inline (T5.1): fondo por tema antes de dist/app.css -->
+    <style>
+      html {
+        background-color: #0b0c10;
+      }
+      html:not(.dark) {
+        background-color: #f4efe6;
+      }
+      body {
+        margin: 0;
+      }
+    </style>
+    <!-- Tailwind v4 compilado en local (pnpm build → dist/app.css;
+         incluye la variante dark y las clases de validación) -->
+    <!-- Tipografías (§3.4): VT323 display + IBM Plex Mono cuerpo/datos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=VT323&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./dist/app.css" />
+    <!-- Tema antes del primer pintado (sin flash) -->
+    <script src="./src/services/theme-boot.js"></script>
+  </head>
+  <body>
+    <section class="relative flex flex-col items-center justify-center min-h-screen p-4 py-10">
+      <!-- Toggle de tema (esta página no tiene header) -->
+      <button
+        type="button"
+        id="btn-tema"
+        aria-label="Cambiar tema"
+        class="btn btn-ghost p-2 rounded-full absolute top-4 right-4"
+      ></button>
+
+      <!-- Terminal de portal (T3.1): título display glitch -->
+      <h1 class="glitch font-display text-4xl text-ink mb-4" data-text="Registro">Registro</h1>
+
+      <form
+        id="form_register"
+        action=""
+        novalidate
+        class="tubo-card cursor-default p-8 w-full max-w-md space-y-4"
+      >
+        <div>
+          <label for="nombre" class="block text-ink font-medium mb-2">Nombre:</label>
+          <input
+            type="text"
+            id="nombre"
+            name="nombre"
+            autocomplete="given-name"
+            aria-describedby="error-nombre"
+            class="campo w-full"
+          />
+          <span id="error-nombre" class="text-sm" role="alert"></span>
+        </div>
+        <div>
+          <label for="apellido" class="block text-ink font-medium mb-2">Apellido:</label>
+          <input
+            type="text"
+            id="apellido"
+            name="apellido"
+            autocomplete="family-name"
+            aria-describedby="error-apellido"
+            class="campo w-full"
+          />
+          <span id="error-apellido" class="text-sm" role="alert"></span>
+        </div>
+        <div>
+          <label for="correo" class="block text-ink font-medium mb-2">Correo electrónico:</label>
+          <input
+            type="email"
+            id="correo"
+            name="correo"
+            autocomplete="email"
+            aria-describedby="error-correo"
+            class="campo w-full"
+          />
+          <span id="error-correo" class="text-sm" role="alert"></span>
+        </div>
+        <!--
+          Contraseña: el bloque #bloque-password recibe el botón ojo y el
+          medidor de fuerza (T3.1) desde register.js al montar.
+        -->
+        <div id="bloque-password">
+          <label for="password" class="block text-ink font-medium mb-2">Contraseña:</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            autocomplete="new-password"
+            aria-describedby="error-password"
+            class="campo w-full"
+          />
+          <span id="error-password" class="text-sm" role="alert"></span>
+        </div>
+        <div id="bloque-confirmar">
+          <label for="confirm_password" class="block text-ink font-medium mb-2"
+            >Confirmar contraseña:</label
+          >
+          <input
+            type="password"
+            id="confirm_password"
+            name="confirm_password"
+            autocomplete="new-password"
+            aria-describedby="error-confirm_password"
+            class="campo w-full"
+          />
+          <span id="error-confirm_password" class="text-sm" role="alert"></span>
+        </div>
+
+        <p class="text-sm text-dim">
+          Posees una cuenta?
+          <a href="./login.html" class="text-brand hover:underline">Inicia sesión</a>
+        </p>
+
+        <p id="mensaje_exito_form" class="aviso aviso-info text-center hidden">
+          Cuenta creada. Redirigiendo al acceso…
+        </p>
+
+        <button type="submit" class="btn btn-primary w-full" id="btn_register">Registrarse</button>
+      </form>
+    </section>
+
+    <script type="module" src="./src/services/theme-toggle.js"></script>
+    <script type="module" src="./src/controllers/register.js"></script>
+  </body>
+</html>

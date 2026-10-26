@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      CSP (defensa en profundidad): solo carga scripts/estilos propios y la
+      API de Rick and Morty. El CDN de Tailwind ya NO se usa: el CSS se
+      compila localmente con pnpm (src/styles/app.css → dist/app.css), por
+      lo que tampoco hacen falta 'wasm-unsafe-eval' ni jsdelivr.
+      Nota: frame-ancestors solo aplica por cabecera HTTP, no en <meta>.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://rickandmortyapi.com data:; connect-src https://rickandmortyapi.com; object-src 'none'; base-uri 'self'; form-action 'self'"
+    />
+    <title>Catálogo Interdimensional · Web-Manual</title>
+    <!-- ============ SEO por página (Fase 6 / T6.1) ============ -->
+    <meta
+      name="description"
+      content="Explora el catálogo de personajes de Rick and Morty: busca, filtra por estado y especie, y guarda tus favoritos en tu terminal interdimensional."
+    />
+    <!-- Canonical/OG en relativo: el despliegue añade el dominio real
+         (documentado en robots.txt y PLAN §6). -->
+    <link rel="canonical" href="./index.html" />
+    <meta name="theme-color" id="meta-theme-color" content="#0b0c10" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Web-Manual" />
+    <meta property="og:locale" content="es_ES" />
+    <meta property="og:title" content="Catálogo Interdimensional · Web-Manual" />
+    <meta
+      property="og:description"
+      content="Personajes de todo el multiverso: busca, filtra y guarda favoritos."
+    />
+    <meta property="og:url" content="./index.html" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Catálogo Interdimensional · Web-Manual" />
+    <meta
+      name="twitter:description"
+      content="Personajes de todo el multiverso: busca, filtra y guarda favoritos."
+    />
+    <!-- JSON-LD (T6.3): entidad del sitio para buscadores -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Web-Manual",
+        "description": "Catálogo interdimensional de personajes de Rick and Morty.",
+        "inLanguage": "es",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "./index.html?buscar={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
+
+    <!--
+      CSS crítico inline (Fase 5 / T5.1): fondo por tema ANTES de que
+      cargue dist/app.css => sin flash blanco/oscuro. theme-boot.js ya
+      puso la clase .dark antes del primer pintado si corresponde.
+    -->
+    <style>
+      html {
+        background-color: #0b0c10;
+      }
+      html:not(.dark) {
+        background-color: #f4efe6;
+      }
+      body {
+        margin: 0;
+      }
+    </style>
+
+    <!--
+      Tailwind CSS v4 compilado en LOCAL (pnpm build → dist/app.css).
+      Este único stylesheet incluye las utilidades, la variante "dark" por
+      clase (.dark en <html>), los tokens semánticos (tokens.css) y los
+      componentes de estilo con tema: botones, campos y validaciones
+      (components.css).
+    -->
+    <!-- Tipografías (§3.4): VT323 display + IBM Plex Mono cuerpo/datos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=VT323&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./dist/app.css" />
+
+    <!-- Tema ANTES del primer pintado (evita flash claro->oscuro) -->
+    <script src="./src/services/theme-boot.js"></script>
+
+    <!-- Rendimiento: el navegador abre conexión temprano con la API -->
+    <link rel="preconnect" href="https://rickandmortyapi.com" />
+  </head>
+  <body>
+    <!-- ============================================================
+         HEADER: inyectado por src/ui/header.js (nav + tema + sesión).
+         El punto de montaje es anterior al <main> => se inserta ahí.
+         ============================================================ -->
+
+    <!-- ============================================================
+         MAIN: catálogo de personajes
+         ============================================================ -->
+    <main id="contenido" class="min-h-screen">
+      <!-- ============================================================
+           HERO (T3.2): texto real + glitch CRT.
+           ============================================================ -->
+      <section class="max-w-7xl mx-auto px-6 pt-10 pb-6">
+        <h1
+          class="glitch font-display text-4xl sm:text-5xl text-ink"
+          data-text="Catálogo Interdimensional"
+        >
+          Catálogo Interdimensional
+        </h1>
+        <p class="text-dim max-w-2xl mt-3">
+          Personajes de todo el multiverso, servidos en tiempo real por la API de Rick and Morty.
+          Busca, filtra y guarda tus favoritos en tu terminal personal.
+        </p>
+      </section>
+
+      <section class="max-w-7xl mx-auto px-6 pb-12">
+        <!--
+          BARRA DE HERRAMIENTAS (T3.2): buscador con debounce + spinner,
+          filtros de estado/especie (endpoint combinado de la API) y
+          orden client-side. Todo el marcado usa tokens semánticos =>
+          funciona en ambos temas sin variantes dark: explícitas.
+        -->
+        <form id="form-busqueda" role="search" class="flex flex-col sm:flex-row gap-3">
+          <label for="buscar" class="sr-only">Buscar personaje por nombre</label>
+          <div class="relative flex-1 min-w-0">
+            <input
+              type="search"
+              id="buscar"
+              name="buscar"
+              placeholder="> grep -i nombre..."
+              autocomplete="off"
+              class="campo w-full"
+            />
+            <!-- Spinner inline: aparece al teclear (debounce) y durante el fetch -->
+            <span
+              id="indicador-busqueda"
+              class="hidden absolute right-3 top-1/2 -translate-y-1/2 items-center gap-2 microcopy"
+            >
+              <svg class="w-4 h-4 animate-spin text-brand" aria-hidden="true">
+                <use href="#icon-loader" />
+              </svg>
+              buscando…
+            </span>
+          </div>
+          <div class="flex gap-3">
+            <button type="submit" class="btn btn-primary">Buscar</button>
+            <button type="button" id="btn-limpiar" class="btn btn-ghost hidden">Limpiar</button>
+          </div>
+        </form>
+
+        <!-- Filtros de la API + orden local -->
+        <div class="flex flex-wrap items-end gap-4 pt-4">
+          <label class="flex flex-col gap-1.5 text-sm text-dim">
+            Estado
+            <select id="filtro-estado" class="campo w-auto">
+              <option value="">Todos</option>
+              <option value="alive">Vivo</option>
+              <option value="dead">Muerto</option>
+              <option value="unknown">Desconocido</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-1.5 text-sm text-dim">
+            Especie
+            <select id="filtro-especie" class="campo w-auto">
+              <option value="">Todas</option>
+              <option value="Human">Humano</option>
+              <option value="Alien">Alienígena</option>
+              <option value="Humanoid">Humanoide</option>
+              <option value="Robot">Robot</option>
+              <option value="Mythological Creature">Criatura mitológica</option>
+              <option value="Poopybutthole">Poopybutthole</option>
+              <option value="Unknown">Desconocida</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-1.5 text-sm text-dim">
+            Orden
+            <select id="orden" class="campo w-auto">
+              <option value="api">Orden API</option>
+              <option value="nombre-asc">Nombre A→Z</option>
+              <option value="nombre-desc">Nombre Z→A</option>
+              <option value="estado">Estado (vivos primero)</option>
+            </select>
+          </label>
+          <p id="indicador-lista" class="microcopy pb-2" aria-live="polite"></p>
+        </div>
+
+        <!--
+          ZONA DE ESTADOS + GRID: la monta src/ui/page-states.js
+          (cargando / error / vacío / grid) con ids propios por instancia
+          => cero ids duplicados entre páginas (Fase 2 / T2.3).
+        -->
+        <div id="zona-catalogo"></div>
+
+        <!-- ---------- Paginación: cargar 20 personajes más ---------- -->
+        <div id="contenedor-cargar-mas" class="hidden pt-8 text-center">
+          <button type="button" id="btn-cargar-mas" class="btn btn-primary">Cargar más</button>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./src/services/theme-toggle.js"></script>
+    <script type="module" src="./src/controllers/catalog.js"></script>
+  </body>
+</html>

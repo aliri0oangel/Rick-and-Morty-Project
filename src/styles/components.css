@@ -1,0 +1,621 @@
+/**
+ * ============================================================================
+ * components.css — Componentes de estilo reutilizables (Fase 1 / PLAN.md T1.4)
+ * ============================================================================
+ * Capa `@layer components`: por debajo de las utilities de Tailwind, así una
+ * utility suelta (--errónea o puntual) siempre puede sobrescribir un componente.
+ *
+ * Todos los colores salen de la CAPA SEMÁNTICA (--brand/--info/--danger/
+ * --app-*), por lo que cada componente funciona en los DOS temas sin una sola
+ * variante dark: explícita. Sustituye a css/customCss.css (validaciones) —
+ * cuya versión NO tenía soporte de tema oscuro (gap corregido aquí).
+ *
+ * Lista: botones · campos/validación · badges de estado · card "marco de
+ * tubo" · skeleton shimmer · avisos.
+ */
+
+@layer components {
+  /* ==========================================================================
+     BOTONES — uppercase monospace, glow al hover (§3.5)
+     ========================================================================== */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-family: var(--font-terminal);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.6rem 1.3rem;
+    border: 1px solid transparent;
+    border-radius: var(--r-ctl);
+    cursor: pointer;
+    transition:
+      background-color var(--trans) var(--ease),
+      border-color var(--trans) var(--ease),
+      color var(--trans) var(--ease),
+      box-shadow var(--trans) var(--ease),
+      transform var(--trans) var(--ease);
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Primario: fondo ámbar + glow de fósforo */
+  .btn-primary {
+    background-color: var(--brand);
+    color: var(--on-brand);
+  }
+  .btn-primary:hover:not(:disabled) {
+    box-shadow: var(--glow-brand);
+  }
+
+  /* Informativo: contorno cian, texto cian */
+  .btn-info {
+    background-color: transparent;
+    border-color: var(--info);
+    color: var(--info);
+  }
+  .btn-info:hover:not(:disabled) {
+    background-color: var(--info-soft);
+    box-shadow: var(--glow-info);
+  }
+
+  /* Peligro: fondo magenta sólido */
+  .btn-danger {
+    background-color: var(--danger);
+    color: var(--on-danger);
+  }
+  .btn-danger:hover:not(:disabled) {
+    box-shadow: var(--glow-brand);
+    filter: brightness(1.08);
+  }
+
+  /* Fantasma: borde de línea, hereda texto; para acciones secundarias */
+  .btn-ghost {
+    background-color: transparent;
+    border-color: var(--app-line);
+    color: var(--app-ink);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    /* M1: sin "borde remarcado" al hover (solo tinte de texto). */
+    color: var(--brand);
+  }
+
+  /* ==========================================================================
+     CAMPOS DE TEXTO — superficie panel + foco cian (§3.5)
+     Las páginas aún no aplican .campo (Fase 3 lo unifica); aquí se define el
+     estilo base y los estados de validación que el JS YA usa hoy.
+     ========================================================================== */
+  .campo {
+    display: block;
+    width: 100%;
+    font-family: var(--font-terminal);
+    font-size: 0.9rem;
+    color: var(--app-ink);
+    background-color: var(--app-panel);
+    border: 1px solid var(--app-line);
+    border-radius: var(--r-ctl);
+    padding: 0.55rem 0.9rem;
+    transition:
+      border-color var(--trans) var(--ease),
+      box-shadow var(--trans) var(--ease);
+  }
+  .campo::placeholder {
+    color: var(--app-dim);
+    opacity: 0.8;
+  }
+  .campo:focus {
+    outline: none;
+    border-color: var(--info);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--info) 25%, transparent);
+  }
+
+  /* --------------------------------------------------------------------------
+     VALIDACIÓN — migrado de css/customCss.css + dark mode + tokens semánticos
+     (los tonos rose/emerald originales no existían en la paleta CRT).
+     Mismas clases que inyecta src/domain/validators.js sobre los inputs.
+     -------------------------------------------------------------------------- */
+  input.errorValidacion {
+    border-color: var(--danger);
+    background-color: var(--danger-soft);
+  }
+  input.errorValidacion:focus {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 25%, transparent);
+    outline: none;
+  }
+
+  input.exitoValidacion {
+    border-color: var(--info);
+    background-color: var(--info-soft);
+  }
+  input.exitoValidacion:focus {
+    border-color: var(--info);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--info) 25%, transparent);
+    outline: none;
+  }
+
+  /* mensaje junto al campo: el <span> es hermano adyacente del input */
+  input.errorValidacion + span {
+    color: var(--danger);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  input.exitoValidacion + span {
+    color: var(--info);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  /* ==========================================================================
+     BADGES DE ESTADO — píldora monospace uppercase (§3.5)
+     Colores según preview C aprobado: vivo=cian · muerto=magenta ·
+     desconocido=ámbar. Los usa crearBadgeEstado() de ui/components.js
+     (Fase 2, mapa OCP BADGE_POR_ESTADO).
+     ========================================================================== */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--font-terminal);
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.18rem 0.6rem;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    background-color: transparent;
+  }
+  .badge-vivo {
+    color: var(--info);
+    background-color: var(--info-soft);
+  }
+  .badge-muerto {
+    color: var(--danger);
+    background-color: var(--danger-soft);
+  }
+  .badge-desconocido {
+    color: var(--brand);
+    background-color: var(--brand-soft);
+  }
+
+  /* ==========================================================================
+     CARD "MARCO DE TUBO" — radio 14px (§3.5)
+     El lift/glow de hover SOLO aplica a las cards de personajes
+     (article[data-id], ver más abajo): los paneles tipo tubo —
+     formularios, ficha de detalle, resumen de cuenta — NO se elevan
+     ni remargan el borde al pasar el mouse (M1).
+     Sobreescrita por las utilities de layout/color de Fase 3 cuando haga
+     falta (capa components < utilities).
+     ========================================================================== */
+  .tubo-card {
+    background-color: var(--app-panel);
+    border: 1px solid var(--app-line);
+    border-radius: var(--r-card);
+    overflow: hidden;
+    transition:
+      transform var(--trans) var(--ease),
+      border-color var(--trans) var(--ease),
+      box-shadow var(--trans) var(--ease);
+  }
+
+  /* Excepción cards (M1): lift sutil + glow ámbar al hover. */
+  article[data-id]:hover {
+    transform: translateY(-3px);
+    border-color: var(--brand);
+    box-shadow: var(--glow-brand);
+  }
+
+  /* Rendimiento (T5.1): el renderizado de cards fuera de pantalla se
+     pospone con content-visibility; contain-intrinsic-size evita el
+     salto de scrollbar (altura estimada mientras no se renderiza). */
+  article[data-id] {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 340px;
+  }
+
+  /* ==========================================================================
+     SKELETON — shimmer muy sutil sobre la superficie panel (§3.5)
+     ========================================================================== */
+  .skeleton {
+    background-color: var(--app-panel);
+    background-image: linear-gradient(
+      100deg,
+      transparent 35%,
+      color-mix(in srgb, var(--app-line) 70%, transparent) 50%,
+      transparent 65%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.4s linear infinite;
+    border-radius: var(--r-ctl);
+  }
+  @keyframes skeleton-shimmer {
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  /* ==========================================================================
+     AVISOS — caja de mensaje (éxito/error) para formularios y toasts
+     ========================================================================== */
+  .aviso {
+    font-family: var(--font-terminal);
+    font-size: 0.85rem;
+    border: 1px solid;
+    border-radius: var(--r-ctl);
+    padding: 0.7rem 1rem;
+  }
+  .aviso-error {
+    color: var(--danger);
+    border-color: var(--danger);
+    background-color: var(--danger-soft);
+  }
+  .aviso-info {
+    color: var(--info);
+    border-color: var(--info);
+    background-color: var(--info-soft);
+  }
+
+  /* ==========================================================================
+     EFECTOS FIRMA CRT (§3.5) — scanlines + viñeta fijas sobre todo el body.
+     Opacidad controlada por --fx (≈1 CRT oscuro, ≈0.15 modo día); anuladas
+     bajo prefers-reduced-motion (sin animación => sin overlays, plan §3.5).
+     ========================================================================== */
+  @media (prefers-reduced-motion: no-preference) {
+    body::before,
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      pointer-events: none;
+    }
+    /* Líneas horizontales de tubo: negras muy tenues cada 3px. */
+    body::before {
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.45) 0 1px,
+        transparent 1px 3px
+      );
+      opacity: calc(var(--fx) * 0.06);
+    }
+    /* Viñeta: bordes oscurecidos como un tubo de rayos catódicos real. */
+    body::after {
+      box-shadow: inset 0 0 120px rgba(0, 0, 0, calc(var(--fx) * 0.4));
+    }
+  }
+
+  /* ==========================================================================
+     GLITCH CIAN/MAGENTA — solo títulos display con data-text (§3.5).
+     Capas pseudo-elemento con clip-path intermitente (~8% del ciclo);
+     anulado por el guard global de reduced-motion (sin keyframes activos).
+     ========================================================================== */
+  .glitch {
+    position: relative;
+    display: inline-block;
+  }
+  .glitch::before,
+  .glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.85;
+  }
+  .glitch::before {
+    color: var(--info);
+    animation: glitch-ciclo 3.4s infinite step-end;
+  }
+  .glitch::after {
+    color: var(--danger);
+    animation: glitch-ciclo 3.4s infinite step-end reverse;
+  }
+  @keyframes glitch-ciclo {
+    0%,
+    90%,
+    100% {
+      clip-path: inset(0 0 100% 0);
+      transform: none;
+    }
+    91% {
+      clip-path: inset(12% 0 58% 0);
+      transform: translateX(-2px);
+    }
+    93% {
+      clip-path: inset(48% 0 22% 0);
+      transform: translateX(2px);
+    }
+    95% {
+      clip-path: inset(70% 0 8% 0);
+      transform: translateX(-1px);
+    }
+  }
+
+  /* ==========================================================================
+     MICROCOPY TERMINAL — prompts de refuerzo temático (§3.5)
+     ========================================================================== */
+  .microcopy {
+    font-family: var(--font-terminal);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--app-dim);
+  }
+
+  /* ==========================================================================
+     CAMPO CON BOTÓN DE VER CONTRASEÑA — wrap relativo + toggle (§3.1)
+     ========================================================================== */
+  .campo-wrap {
+    position: relative;
+  }
+  .campo-wrap .campo {
+    padding-right: 2.75rem;
+  }
+  .campo-toggle {
+    position: absolute;
+    right: 0.4rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--app-dim);
+    padding: 0.35rem;
+    border-radius: var(--r-ctl);
+    cursor: pointer;
+    transition: color var(--trans) var(--ease);
+  }
+  .campo-toggle:hover {
+    color: var(--brand);
+  }
+
+  /* ==========================================================================
+     MEDIDOR DE FUERZA DE CONTRASEÑA — 4 segmentos + etiqueta (§3.1)
+     Nivel 1-2 peligro (magenta), 3 marca (ámbar), 4 seguro (cian).
+     ========================================================================== */
+  .fuerza {
+    display: flex;
+    gap: 0.45rem;
+    align-items: center;
+    margin-top: 0.45rem;
+  }
+  .fuerza-barra {
+    display: flex;
+    gap: 3px;
+    flex: 1;
+  }
+  .fuerza-seg {
+    height: 4px;
+    flex: 1;
+    border-radius: 999px;
+    background-color: var(--app-line);
+    transition: background-color var(--trans) var(--ease);
+  }
+  .fuerza[data-nivel='1'] .fuerza-seg:nth-child(-n + 1) {
+    background-color: var(--danger);
+  }
+  .fuerza[data-nivel='2'] .fuerza-seg:nth-child(-n + 2) {
+    background-color: var(--brand);
+  }
+  .fuerza[data-nivel='3'] .fuerza-seg:nth-child(-n + 3) {
+    background-color: var(--brand);
+  }
+  .fuerza[data-nivel='4'] .fuerza-seg:nth-child(-n + 4) {
+    background-color: var(--info);
+  }
+  .fuerza-texto {
+    font-size: 0.75rem;
+    color: var(--app-dim);
+    min-width: 4.5rem;
+    text-align: right;
+  }
+
+  /* ==========================================================================
+     SELECTS — fondo coherente con el panel en ambos temas (OS dark-mode
+     quirks en el dropdown nativo; aquí al menos el propio select casa).
+     ========================================================================== */
+  .campo option {
+    background-color: var(--app-panel);
+    color: var(--app-ink);
+  }
+
+  /* ==========================================================================
+     CATÁLOGO DE MOTION (§Fase 4 / T4.1) — 150–250ms ease-out.
+     Todo es degradable: bajo prefers-reduced-motion el guard global de
+     tokens.css aplana duraciones a 0.01ms => el contenido queda visible
+     sin animación (nunca se esconde a la espera de un observer).
+     ========================================================================== */
+
+  /* Press: retroalimentación táctil inmediata en cualquier botón
+     (escala pura — sin desplazamiento vertical; M1 eliminó la subida). */
+  .btn:active {
+    transform: scale(0.97);
+  }
+
+  /* Reveal on scroll de las CARDS (una sola pasada, T4.1 — excepción
+     M1: las cards mantienen su entrada animada): el estado inicial es
+     OPACITY 0, pero el observer de characters.js añade .reveal-listo
+     en cuanto intersecta (y también de inmediato si ya es visible);
+     con reduced-motion el guard lo hace instantáneo e invisible. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(12px);
+    transition:
+      opacity 200ms ease-out,
+      transform 200ms ease-out;
+  }
+  .reveal.reveal-listo {
+    opacity: 1;
+    transform: none;
+  }
+  /* Sin IntersectionObserver (entornos raros): nunca dejar contenido
+     oculto — el JS añade .reveal-listo igualmente. */
+
+  /* Portal de entrada del detalle (T4.2): ≤150ms, no bloquea. */
+  @keyframes portal-entrada {
+    from {
+      opacity: 0;
+      transform: scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .portal-entrada {
+    animation: portal-entrada 150ms ease-out;
+  }
+
+  /* Imagen con fade-in al cargar (T5.2): la base está en el marcado
+     (opacity-0) y el JS añade opacity-100 en load/complete. */
+  .img-fade {
+    transition: opacity 200ms ease-out;
+  }
+
+  /* Transición del toggle de tema (T4.1): el body ya transiciona
+     colores con --trans en tokens.css; aquí el header acompaña. */
+  header nav {
+    transition:
+      background-color var(--trans) var(--ease),
+      border-color var(--trans) var(--ease);
+  }
+
+  /* ==========================================================================
+     CABECERA FIJA CON GLASSMORPHISM (M3): la cabecera completa queda
+     sticky arriba (sin solapar contenido: sigue en el flujo) y su barra
+     usa fondo translúcido + blur para que el contenido pase por debajo.
+     El tinte sale del token --app-panel => ambos temas sin reglas extra.
+     ========================================================================== */
+  .cabecera-fija {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+  .barra-vidrio {
+    background-color: color-mix(in srgb, var(--app-panel) 72%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  /* ==========================================================================
+     ICONO REDONDO DEL NAV (<768px, M4) — 44×44 (objetivo táctil ≥44px).
+     Sin borde remarcado al hover (M1): solo tinte de fondo/texto.
+     ========================================================================== */
+  .btn-icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--app-line);
+    border-radius: 999px;
+    color: var(--app-dim);
+    background-color: transparent;
+    transition:
+      color var(--trans) var(--ease),
+      background-color var(--trans) var(--ease);
+  }
+  .btn-icono:hover {
+    color: var(--brand);
+    background-color: color-mix(in srgb, var(--brand) 10%, transparent);
+  }
+  /* Ruta activa (estado, NO hover): acento ámbar + aria-current. */
+  .btn-icono[aria-current='page'] {
+    color: var(--brand);
+    border-color: var(--brand);
+  }
+
+  /* ==========================================================================
+     DROPDOWN "MI CUENTA" (M4) — panel sólido legible sobre la barra de
+     cristal; ítems con feedback por color de fondo (sin movimiento).
+     ========================================================================== */
+  .menu-cuenta {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 0.5rem;
+    min-width: 12rem;
+    padding: 0.35rem;
+    background-color: var(--app-panel);
+    border: 1px solid var(--app-line);
+    border-radius: var(--r-card);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    z-index: 50;
+  }
+  .menu-cuenta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    width: 100%;
+    padding: 0.55rem 0.8rem;
+    border-radius: var(--r-ctl);
+    font-family: var(--font-terminal);
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    text-align: left;
+    color: var(--app-ink);
+    cursor: pointer;
+    transition:
+      background-color var(--trans) var(--ease),
+      color var(--trans) var(--ease);
+  }
+  .menu-cuenta-item:hover {
+    background-color: color-mix(in srgb, var(--brand) 14%, transparent);
+    color: var(--brand);
+  }
+  .menu-cuenta-item--salir {
+    color: var(--danger);
+  }
+  .menu-cuenta-item--salir:hover {
+    background-color: color-mix(in srgb, var(--danger) 16%, transparent);
+    color: var(--danger);
+  }
+
+  /* ==========================================================================
+     SKIP-LINK (Fase 8 / T8.1): enlace "Saltar al contenido" que solo
+     aparece al recibir foco por teclado (nunca estorba el diseño).
+     ========================================================================== */
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 200;
+    padding: 0.6rem 1rem;
+    background-color: var(--app-panel);
+    color: var(--brand);
+    border: 1px solid var(--brand);
+    border-radius: var(--r-ctl);
+  }
+  .skip-link:focus {
+    left: 1rem;
+    top: 0.75rem;
+  }
+
+  /* ==========================================================================
+     VIEW TRANSITIONS (T4.4, opcional con degradación elegante).
+     Se activan solo si document.startViewTransition existe y el usuario
+     no pide reduced-motion (guard con no-preference).
+     ========================================================================== */
+  @keyframes vt-salida {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes vt-entrada {
+    from {
+      opacity: 0;
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    ::view-transition-old(root) {
+      animation: vt-salida 120ms ease-out;
+    }
+    ::view-transition-new(root) {
+      animation: vt-entrada 150ms ease-out;
+    }
+  }
+}

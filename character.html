@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- CSP de defensa en profundidad (ver comentario detallado en index.html) -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://rickandmortyapi.com data:; connect-src https://rickandmortyapi.com; object-src 'none'; base-uri 'self'; form-action 'self'"
+    />
+    <title>Detalle de personaje · Web-Manual</title>
+    <!-- SEO (T6.1) -->
+    <meta
+      name="description"
+      content="Ficha interdimensional de un personaje de Rick and Morty: estado, especie, origen, ubicación y episodios."
+    />
+    <link rel="canonical" href="./character.html" />
+    <meta name="theme-color" id="meta-theme-color" content="#0b0c10" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Web-Manual" />
+    <meta property="og:locale" content="es_ES" />
+    <meta property="og:title" content="Detalle de personaje · Web-Manual" />
+    <meta
+      property="og:description"
+      content="Ficha interdimensional: estado, especie, origen, ubicación y episodios."
+    />
+    <meta property="og:url" content="./character.html" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Detalle de personaje · Web-Manual" />
+    <meta
+      name="twitter:description"
+      content="Ficha interdimensional: estado, especie, origen, ubicación y episodios."
+    />
+    <!-- CSS crítico inline (T5.1): fondo por tema antes de dist/app.css -->
+    <style>
+      html {
+        background-color: #0b0c10;
+      }
+      html:not(.dark) {
+        background-color: #f4efe6;
+      }
+      body {
+        margin: 0;
+      }
+    </style>
+
+    <!-- Tailwind v4 compilado en local (pnpm build → dist/app.css;
+         incluye la variante dark y las clases de validación) -->
+    <!-- Tipografías (§3.4): VT323 display + IBM Plex Mono cuerpo/datos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=VT323&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./dist/app.css" />
+
+    <!-- Tema antes del primer pintado (sin flash) -->
+    <script src="./src/services/theme-boot.js"></script>
+
+    <!-- Rendimiento: conexión temprana con la API -->
+    <link rel="preconnect" href="https://rickandmortyapi.com" />
+  </head>
+  <body>
+    <!-- Header inyectado por src/ui/header.js (nav + tema + sesión). -->
+
+    <main id="contenido" class="min-h-screen">
+      <!-- ============ Estado: CARGANDO (esqueleto inyectado por JS) ============ -->
+      <section id="detalle-cargando" class="max-w-5xl mx-auto p-6" aria-busy="true"></section>
+
+      <!-- ============ Estado: ERROR (id inválido / inexistente / red) ============ -->
+      <!-- role="alert" + aria-live: el fallo se anuncia de inmediato (T2.3) -->
+      <section
+        id="detalle-error"
+        class="hidden max-w-md mx-auto p-6"
+        role="alert"
+        aria-live="assertive"
+      ></section>
+
+      <!-- ============ Detalle completo (T3.4: ficha jerárquica) ============ -->
+      <article id="detalle" class="hidden max-w-5xl mx-auto p-6">
+        <div class="tubo-card cursor-default grid grid-cols-1 md:grid-cols-[minmax(0,360px)_1fr]">
+          <!-- Imagen grande: LCP => fetchpriority=high (T3.4).
+               M6: en 2 columnas (md+) pierde el cuadrado fijo y estira
+               con la celda => completa la card sin hueco inferior. -->
+          <div class="relative w-full aspect-square bg-app md:aspect-auto">
+            <img
+              data-campo="imagen"
+              alt=""
+              fetchpriority="high"
+              decoding="async"
+              class="absolute inset-0 w-full h-full object-cover"
+            />
+          </div>
+
+          <!-- Datos ampliados -->
+          <div class="p-6 flex flex-col gap-4">
+            <p class="microcopy" data-campo="ficha-id"></p>
+            <div class="flex items-start justify-between gap-3">
+              <h1
+                data-campo="nombre"
+                class="glitch font-display text-3xl sm:text-4xl text-ink"
+                data-text=""
+              ></h1>
+
+              <!-- Badge de estado: lo rellena el componente crearBadgeEstado -->
+              <span data-campo="estado" class="shrink-0"></span>
+            </div>
+
+            <!-- Lista de datos del personaje -->
+            <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+              <div>
+                <dt class="microcopy">Especie</dt>
+                <dd data-campo="especie" class="font-medium text-ink"></dd>
+              </div>
+              <div>
+                <dt class="microcopy">Género</dt>
+                <dd data-campo="genero" class="font-medium text-ink"></dd>
+              </div>
+              <div>
+                <dt class="microcopy">Origen</dt>
+                <dd data-campo="origen" class="font-medium text-ink"></dd>
+              </div>
+              <div>
+                <dt class="microcopy">Ubicación actual</dt>
+                <dd data-campo="ubicacion" class="font-medium text-ink"></dd>
+              </div>
+              <div class="sm:col-span-2">
+                <dt class="microcopy">Episodios</dt>
+                <dd class="font-medium text-ink">
+                  <span data-campo="episodios"></span>
+                  <!-- Chips EP### extraídos de las URLs (sin fetch extra, T3.4) -->
+                  <span data-campo="episodios-chips" class="flex flex-wrap gap-1.5 mt-2"></span>
+                </dd>
+              </div>
+            </dl>
+
+            <!-- Acciones: favorito (JS) + compartir (JS) + volver -->
+            <div class="mt-auto flex flex-wrap gap-3 pt-2" data-acciones>
+              <button type="button" id="btn-compartir" class="btn btn-info gap-2"></button>
+              <a href="./index.html" id="btn-volver" class="btn btn-ghost"> Volver al catálogo </a>
+            </div>
+          </div>
+        </div>
+      </article>
+    </main>
+
+    <script type="module" src="./src/services/theme-toggle.js"></script>
+    <script type="module" src="./src/controllers/character.js"></script>
+  </body>
+</html>
