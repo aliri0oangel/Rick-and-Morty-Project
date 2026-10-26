@@ -593,7 +593,14 @@ Fase 0 (tooling) ──▶ Fase 1 (tokens + dirección visual) ──▶ Fase 2 
 - **A3 ✓** La regex de correo de `validators.js` acepta TLD de 2+ letras: `.es`, `.co`, `.io`, `.ai`, etc. ya son válidos.
 - **A4 ✓** Proyecto versionado en un repositorio Git independiente dentro de `Web-Manual`; `dist/app.css` se versiona y `.opencode/` + `reportes/` quedan ignorados.
 - **Tests ✓** `tests/regressions.spec.js` cubre búsqueda sin resultados, detalle 404, registro con `.es` y rechazo de correo sin TLD.
-- **Verificación actual:** `pnpm lint` (0) · `format:check` ✓ · `check:imports` (63/63) · `check:contrast` (28/28) · `build` OK · `audit:budgets` OK (CSS 7.3/20 KB · JS 55.8/60 KB) · **`pnpm test:e2e` 93/93** (suite completa, 7.9 min).
+- **Verificación en esa iteración:** `pnpm lint` (0) · `format:check` ✓ · `check:imports` (63/63) · `check:contrast` (28/28) · `build` OK · `audit:budgets` OK (CSS 7.3/20 KB · JS 55.8/60 KB) · **`pnpm test:e2e` 93/93** (suite completa, 7.9 min).
+
+### Correcciones posteriores — UX: flash de sesión y toast (2026-10-26)
+
+- **Flash del catálogo ✓** `src/services/session-boot.js` (script clásico y bloqueante en `<head>`) valida `sessionStorage.sesion` y su `_loginAt` contra los 60 min antes de que se parsee el `<body>`; sin sesión válida hace `location.replace('./login.html')` y añade `auth-redirect` (`html.auth-redirect body { visibility: hidden; }` en `tokens.css`). Se declara con `data-auth="protected"` en `index.html`, `favorites.html`, `character.html` y `mi_account.html`; `rutaProtegida()` sigue como defensa en profundidad. Medición Playwright: sin sesión el primer `h1` visible es el del login (269 ms) y el del catálogo nunca llega al DOM; con sesión el catálogo pinta normal.
+- **Toast sólido ✓** `mostrarToast()` usa `aviso toast toast-info|toast-error`: fondos opacos `--info`/`--danger` con texto `--on-info`/`--on-danger` (6.10:1 y 5.91:1 en día; 11.20:1 y 6.42:1 en CRT). Contenedor a `z-[110]`, por encima de las scanlines CRT (z-index 100). Los avisos de formulario conservan `.aviso-info`/`.aviso-error` (soft).
+- **Tests ✓** `tests/regressions.spec.js` añade la no-pintura del catálogo (MutationObserver + marca en sessionStorage; validado en rojo al quitar el guard) y la opacidad del toast en ambos temas + z-index del contenedor.
+- **Verificación actual:** `pnpm lint` (0) · `format:check` ✓ · `check:imports` (63/63) · `check:contrast` (28/28) · `build` OK · `audit:budgets` OK (CSS 7.4/20 KB · JS 57.1/60 KB) · **`pnpm test:e2e` 99/99** (suite completa, 5.1 min).
 
 ---
 
