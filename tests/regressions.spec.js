@@ -96,4 +96,33 @@ test.describe('regresiones de prioridad alta', () => {
     expect(await page.evaluate(() => sessionStorage.getItem('flash-catalogo'))).toBeNull();
   });
 
+  test('toast de favoritos es opaco en ambos temas', async ({ page }) => {
+    const correo = await registrarUsuario(page);
+    await iniciarSesion(page, correo);
+    await expect(page.locator('article[data-id]').first()).toBeVisible({ timeout: 15_000 });
+
+    // Tema claro (por defecto): primer favorito => toast info sólido.
+    await page.locator('article[data-id] [data-favorito]').first().click();
+    const toastClaro = page.locator('div[role="status"] .toast').last();
+    await expect(toastClaro).toBeVisible();
+    await expect(toastClaro).toContainText(/favoritos/);
+    const fondoClaro = await toastClaro.evaluate((n) => getComputedStyle(n).backgroundColor);
+    expect(fondoClaro).toMatch(/^rgb\(/); // rgb(...) sin alpha => opaco
+
+    // Tema oscuro: el acento cambia y sigue siendo opaco.
+    await page.click('#btn-tema');
+    await expect(page.locator('html')).toHaveClass(/dark/);
+    await page.locator('article[data-id] [data-favorito]').nth(1).click();
+    const toastOscuro = page.locator('div[role="status"] .toast').last();
+    await expect(toastOscuro).toBeVisible();
+    const fondoOscuro = await toastOscuro.evaluate((n) => getComputedStyle(n).backgroundColor);
+    expect(fondoOscuro).toMatch(/^rgb\(/);
+    expect(fondoOscuro).not.toBe(fondoClaro);
+
+    // Contenedor por encima de las scanlines CRT (z-index 100).
+    const zIndex = await page
+      .locator('div[role="status"]')
+      .evaluate((n) => getComputedStyle(n).zIndex);
+    expect(zIndex).toBe('110');
+  });
 });

@@ -29,8 +29,8 @@ const PARES = [
   ['día · danger sobre bg', '#c0155a', '#f4efe6', UMBRAL_NORMAL],
   ['día · danger sobre panel', '#c0155a', '#fffdf8', UMBRAL_NORMAL],
   ['día · on-brand sobre brand (btn)', '#fffdf8', '#8f5a00', UMBRAL_NORMAL],
-  ['día · on-info sobre info (btn)', '#fffdf8', '#0b6b78', UMBRAL_NORMAL],
-  ['día · on-danger sobre danger (btn)', '#fffdf8', '#c0155a', UMBRAL_NORMAL],
+  ['día · on-info sobre info (btn/toast)', '#fffdf8', '#0b6b78', UMBRAL_NORMAL],
+  ['día · on-danger sobre danger (btn/toast)', '#fffdf8', '#c0155a', UMBRAL_NORMAL],
 
   // ---- CRT OSCURO ----
   ['CRT · ink sobre bg', '#ffd9a0', '#0b0c10', UMBRAL_NORMAL],
@@ -44,8 +44,8 @@ const PARES = [
   ['CRT · danger sobre bg', '#ff4fa3', '#0b0c10', UMBRAL_NORMAL],
   ['CRT · danger sobre panel', '#ff4fa3', '#12141a', UMBRAL_NORMAL],
   ['CRT · on-brand sobre brand (btn)', '#0b0c10', '#ffb000', UMBRAL_NORMAL],
-  ['CRT · on-info sobre info (btn)', '#0b0c10', '#39d7e6', UMBRAL_NORMAL],
-  ['CRT · on-danger sobre danger (btn)', '#0b0c10', '#ff4fa3', UMBRAL_NORMAL],
+  ['CRT · on-info sobre info (btn/toast)', '#0b0c10', '#39d7e6', UMBRAL_NORMAL],
+  ['CRT · on-danger sobre danger (btn/toast)', '#0b0c10', '#ff4fa3', UMBRAL_NORMAL],
 
   // ---- No textuales pero críticos (bordes/foco): 3:1 ----
   ['día · brand sobre bg (borde/foco)', '#8f5a00', '#f4efe6', UMBRAL_GRANDE],
