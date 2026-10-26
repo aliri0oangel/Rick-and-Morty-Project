@@ -93,6 +93,9 @@
     <!-- Tema ANTES del primer pintado (evita flash claro->oscuro) -->
     <script src="./src/services/theme-boot.js"></script>
 
+    <!-- Guardia de sesión pre-paint: sin sesión NO se pinta el catálogo -->
+    <script src="./src/services/session-boot.js" data-auth="protected"></script>
+
     <!-- Rendimiento: el navegador abre conexión temprano con la API -->
     <link rel="preconnect" href="https://rickandmortyapi.com" />
   </head>

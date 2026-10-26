@@ -68,4 +68,32 @@ test.describe('regresiones de prioridad alta', () => {
     await expect(page.locator('#error-correo')).toHaveText('El correo no tiene un formato válido.');
     await expect(page).toHaveURL(/register\.html/);
   });
+
+  test('sin sesión no pinta el catálogo antes de redirigir', async ({ page }) => {
+    // El observer corre desde el inicio del documento: si el <h1> del
+    // catálogo llega a existir (aunque sea un frame), deja una marca en
+    // sessionStorage que sobrevive al redirect.
+    await page.addInitScript(() => {
+      if (!location.pathname.endsWith('/index.html')) return;
+
+      const marcar = () => {
+        const h1 = document.querySelector('h1');
+        if (h1 && h1.textContent.includes('Catálogo Interdimensional')) {
+          sessionStorage.setItem('flash-catalogo', '1');
+        }
+      };
+
+      new MutationObserver(marcar).observe(document, { childList: true, subtree: true });
+      marcar();
+    });
+
+    // El redirect en <head> puede abortar la navegación original.
+    await page.goto('/index.html').catch(() => {});
+    await expect(page).toHaveURL(/login\.html/);
+    await expect(page.locator('h1')).toHaveText('Bienvenido');
+
+    // session-boot.js redirige antes de parsear el body => nunca hubo h1.
+    expect(await page.evaluate(() => sessionStorage.getItem('flash-catalogo'))).toBeNull();
+  });
+
 });

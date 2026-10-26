@@ -57,6 +57,9 @@
 
     <!-- Tema antes del primer pintado (sin flash) -->
     <script src="./src/services/theme-boot.js"></script>
+
+    <!-- Guardia de sesión pre-paint: sin sesión NO se pinta la cuenta -->
+    <script src="./src/services/session-boot.js" data-auth="protected"></script>
   </head>
   <body>
     <!-- Header inyectado por src/ui/header.js (nav + tema + sesión). -->
