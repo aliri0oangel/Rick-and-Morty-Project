@@ -587,6 +587,14 @@ Fase 0 (tooling) ──▶ Fase 1 (tokens + dirección visual) ──▶ Fase 2 
 - **Comentarios/JSDoc (✓):** cabecera de fichero en todos los módulos de `src/` y tests; JSDoc en todas las funciones públicas (incluidos los nuevos `pintarNombre`, `crearControlPassword(..., {conMedidor})` y las secciones de CSS con comentarios de sección); cero anotaciones `//` visibles (M5).
 - **Hallazgos con cambios durante la revisión:** JSDoc añadido a `pintarNombre` (único hueco detectado); tests nuevos M2 (3) y M6 (1) para cerrar la evidencia de los criterios aceptados.
 
+### Correcciones posteriores — Hallazgos de prioridad alta (2026-10-26)
+
+- **A1 + A2 ✓** `characters-api.js` ahora propaga `error.status` desde `pedirUnaVez()`; `buscarPersonajes()` trata cualquier 404 como resultado vacío y `character.js` usa `status === 404` para el mensaje “Ese personaje no existe en la API.”. Se eliminaron las comparaciones frágiles por texto (`"nothing found"` / `"nothing here"`) también en la paginación de `catalog.js`.
+- **A3 ✓** La regex de correo de `validators.js` acepta TLD de 2+ letras: `.es`, `.co`, `.io`, `.ai`, etc. ya son válidos.
+- **A4 ✓** Proyecto versionado en un repositorio Git independiente dentro de `Web-Manual`; `dist/app.css` se versiona y `.opencode/` + `reportes/` quedan ignorados.
+- **Tests ✓** `tests/regressions.spec.js` cubre búsqueda sin resultados, detalle 404, registro con `.es` y rechazo de correo sin TLD.
+- **Verificación actual:** `pnpm lint` (0) · `format:check` ✓ · `check:imports` (63/63) · `check:contrast` (28/28) · `build` OK · `audit:budgets` OK (CSS 7.3/20 KB · JS 55.8/60 KB) · **`pnpm test:e2e` 93/93** (suite completa, 7.9 min).
+
 ---
 
 _Documento vivo: cualquier modificación futura se edita aquí, manteniendo la numeración de fases y tareas._

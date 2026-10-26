@@ -44,13 +44,16 @@ Aplicación **HTML + CSS + JS + Tailwind v4** (sin frameworks) con estética "Di
 │  │               · character.js · account.js
 │  └─ styles/       app.css (entrada) · tokens.css · components.css
 ├─ dist/            app.css (build, versionado)
-├─ tests/           e2e.spec.js · a11y.spec.js · responsive.spec.js
+├─ tests/           e2e.spec.js · a11y.spec.js · responsive.spec.js · regressions.spec.js
 │  ├─ helpers/      mock-api.js              (page.route: API hermética)
 │  └─ fixtures/     personajes.js            (formato crudo de la API)
 ├─ scripts/         dev.mjs · check-imports.mjs · check-contrast.mjs · audit-budgets.mjs
 ├─ favicon.svg · robots.txt · sitemap.xml
 ├─ PLAN.md · README.md · playwright.config.js
 ```
+
+> `dist/app.css` se versiona para el despliegue estático. Tras cambiar estilos,
+> ejecuta `pnpm build` y commitea el CSS generado.
 
 ## Decisiones arquitectónicas (resumen)
 
@@ -83,11 +86,11 @@ Aplicación **HTML + CSS + JS + Tailwind v4** (sin frameworks) con estética "Di
 
 3. **Estilo con tokens/layer:** reglas en `src/styles/components.css` dentro de `@layer components`, usando clases semánticas (`bg-panel`, `text-dim`…). Utilities de Tailwind ganan a la capa de componentes: no uses `!important` ni prefijos `!`.
 4. **Documenta:** cabecera de archivo + JSDoc en toda función pública + comentario de "por qué" si la lógica no es obvia.
-5. **Verifica:** `pnpm lint && pnpm check:imports && pnpm build`, y si toca contraste/nuevos tokens: `pnpm check:contrast`. Para interacciones críticas, añade aserción en `tests/e2e.spec.js`.
+5. **Verifica:** `pnpm lint && pnpm check:imports && pnpm build`, y si toca contraste/nuevos tokens: `pnpm check:contrast`. Para interacciones críticas, añade aserción en `tests/e2e.spec.js` o `tests/regressions.spec.js`.
 
 ## QA / verificación
 
-- **Gate automático:** `pnpm lint` · `format` · `check:imports` · `check:contrast` · `build` · `audit:budgets` · `pnpm test:e2e` (E2E core + axe 0 violaciones graves + overflow/header sticky/medidor M2/hueco M6 en 375/768/1280 — **81 tests**).
+- **Gate automático:** `pnpm lint` · `format` · `check:imports` · `check:contrast` · `build` · `audit:budgets` · `pnpm test:e2e` (E2E core + axe 0 violaciones graves + overflow/header sticky/medidor M2/hueco M6 en 375/768/1280 — **93 tests**).
 - **Matriz responsive completa (manual/CI):** 12 resoluciones × 6 páginas × 2 temas = 144 celdas (`PLAN.md` §10.2). El runner automatiza las 3 resoluciones críticas; el resto se amplía en `playwright.config.js` (`projects`).
 - **Lighthouse (manual):** `pnpm dev` + `pnpm audit:lighthouse` → presupuestos de `PLAN.md` §10.1 (Performance ≥ 90, JS < 60KB gzip…).
 - **API real (manual):** los tests mockean la API; el comportamiento real (rate-limit, 429, caché) se revisa con `pnpm dev` navegando el catálogo.
