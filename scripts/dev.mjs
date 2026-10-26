@@ -58,7 +58,7 @@ const clients = new Set();
 /* -------------------------------------------------------------------------- */
 const tw = spawn(
   'pnpm',
-  ['exec', 'tailwindcss', '-i', 'src/styles/app.css', '-o', 'dist/app.css', '--watch'],
+  ['exec', 'tailwindcss', '-i', 'src/styles/app.css', '-o', 'dist/app.css', '--watch', '--minify'],
   {
     cwd: ROOT,
     stdio: 'inherit',

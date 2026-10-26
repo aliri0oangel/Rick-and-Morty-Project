@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "build": "tailwindcss -i src/styles/app.css -o dist/app.css --minify",
-    "watch": "tailwindcss -i src/styles/app.css -o dist/app.css --watch",
+    "watch": "tailwindcss -i src/styles/app.css -o dist/app.css --watch --minify",
     "lint": "eslint .",
     "check:imports": "node scripts/check-imports.mjs",
     "check:contrast": "node scripts/check-contrast.mjs",
