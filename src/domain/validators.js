@@ -6,7 +6,8 @@ const successClass = 'exitoValidacion';
 const regexs = {
   nombre: /^[a-zA-ZñÑáÁéÉíÍóÓúÚ\s']{3,20}$/i,
   apellido: /^[a-zA-ZñÑáÁéÉíÍóÓúÚ\s']{3,20}$/i,
-  correo: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{3,}$/,
+  // TLD de 2+ letras: .es, .co, .io, .ai... son válidos.
+  correo: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
   password: /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[^\w\s])[A-Za-z\d\W]{8,50}$/,
 };
 
