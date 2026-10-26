@@ -36,7 +36,7 @@ Aplicación **HTML + CSS + JS + Tailwind v4** (sin frameworks) con estética "Di
 │  ├─ config/       config.js               (API, storage keys, rutas, rate-limit)
 │  ├─ core/         storage.js · cookies.js · hash.js · rate-limit.js
 │  ├─ services/     auth.js · favorites-repository.js · characters-api.js
-│  │               · theme-boot.js · theme-toggle.js
+│  │               · session-boot.js · theme-boot.js · theme-toggle.js
 │  ├─ domain/       validators.js           (login/registro/fuerza de contraseña)
 │  ├─ ui/           header.js · components.js · page-states.js · characters.js
 │  │               · icons.js · view-transitions.js
@@ -90,7 +90,7 @@ Aplicación **HTML + CSS + JS + Tailwind v4** (sin frameworks) con estética "Di
 
 ## QA / verificación
 
-- **Gate automático:** `pnpm lint` · `format` · `check:imports` · `check:contrast` · `build` · `audit:budgets` · `pnpm test:e2e` (E2E core + axe 0 violaciones graves + overflow/header sticky/medidor M2/hueco M6 en 375/768/1280 — **93 tests**).
+- **Gate automático:** `pnpm lint` · `format` · `check:imports` · `check:contrast` · `build` · `audit:budgets` · `pnpm test:e2e` (E2E core + axe 0 violaciones graves + overflow/header sticky/medidor M2/hueco M6 en 375/768/1280 — **99 tests**).
 - **Matriz responsive completa (manual/CI):** 12 resoluciones × 6 páginas × 2 temas = 144 celdas (`PLAN.md` §10.2). El runner automatiza las 3 resoluciones críticas; el resto se amplía en `playwright.config.js` (`projects`).
 - **Lighthouse (manual):** `pnpm dev` + `pnpm audit:lighthouse` → presupuestos de `PLAN.md` §10.1 (Performance ≥ 90, JS < 60KB gzip…).
 - **API real (manual):** los tests mockean la API; el comportamiento real (rate-limit, 429, caché) se revisa con `pnpm dev` navegando el catálogo.

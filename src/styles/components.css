@@ -261,6 +261,24 @@
     background-color: var(--info-soft);
   }
 
+  /* Toast flotante (favoritos, compartir): variante SÓLIDA para que el
+     mensaje no se transparente sobre cards/imágenes. Los avisos de
+     formulario conservan .aviso-info/.aviso-error con fondos soft. */
+  .toast {
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.4;
+    border-color: color-mix(in srgb, currentColor 35%, transparent);
+  }
+  .toast-info {
+    color: var(--on-info);
+    background-color: var(--info);
+  }
+  .toast-error {
+    color: var(--on-danger);
+    background-color: var(--danger);
+  }
+
   /* ==========================================================================
      EFECTOS FIRMA CRT (§3.5) — scanlines + viñeta fijas sobre todo el body.
      Opacidad controlada por --fx (≈1 CRT oscuro, ≈0.15 modo día); anuladas

@@ -438,14 +438,15 @@ let contenedorToast = null;
 export function mostrarToast(mensaje, tipo = 'info', ms = 3200) {
   if (!contenedorToast || !contenedorToast.isConnected) {
     contenedorToast = document.createElement('div');
-    contenedorToast.className = 'fixed bottom-4 right-4 z-50 flex flex-col gap-2 items-end';
+    // z-[110] queda por encima de las scanlines CRT (z-index 100).
+    contenedorToast.className = 'fixed bottom-4 right-4 z-[110] flex flex-col gap-2 items-end';
     contenedorToast.setAttribute('role', 'status');
     contenedorToast.setAttribute('aria-live', 'polite');
     document.body.appendChild(contenedorToast);
   }
 
   const toast = document.createElement('div');
-  toast.className = `aviso ${tipo === 'error' ? 'aviso-error' : 'aviso-info'} shadow-lg max-w-xs`;
+  toast.className = `aviso toast ${tipo === 'error' ? 'toast-error' : 'toast-info'} shadow-lg max-w-xs`;
   toast.textContent = mensaje;
   contenedorToast.appendChild(toast);
 

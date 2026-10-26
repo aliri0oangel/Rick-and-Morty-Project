@@ -68,4 +68,61 @@ test.describe('regresiones de prioridad alta', () => {
     await expect(page.locator('#error-correo')).toHaveText('El correo no tiene un formato válido.');
     await expect(page).toHaveURL(/register\.html/);
   });
+
+  test('sin sesión no pinta el catálogo antes de redirigir', async ({ page }) => {
+    // El observer corre desde el inicio del documento: si el <h1> del
+    // catálogo llega a existir (aunque sea un frame), deja una marca en
+    // sessionStorage que sobrevive al redirect.
+    await page.addInitScript(() => {
+      if (!location.pathname.endsWith('/index.html')) return;
+
+      const marcar = () => {
+        const h1 = document.querySelector('h1');
+        if (h1 && h1.textContent.includes('Catálogo Interdimensional')) {
+          sessionStorage.setItem('flash-catalogo', '1');
+        }
+      };
+
+      new MutationObserver(marcar).observe(document, { childList: true, subtree: true });
+      marcar();
+    });
+
+    // El redirect en <head> puede abortar la navegación original.
+    await page.goto('/index.html').catch(() => {});
+    await expect(page).toHaveURL(/login\.html/);
+    await expect(page.locator('h1')).toHaveText('Bienvenido');
+
+    // session-boot.js redirige antes de parsear el body => nunca hubo h1.
+    expect(await page.evaluate(() => sessionStorage.getItem('flash-catalogo'))).toBeNull();
+  });
+
+  test('toast de favoritos es opaco en ambos temas', async ({ page }) => {
+    const correo = await registrarUsuario(page);
+    await iniciarSesion(page, correo);
+    await expect(page.locator('article[data-id]').first()).toBeVisible({ timeout: 15_000 });
+
+    // Tema claro (por defecto): primer favorito => toast info sólido.
+    await page.locator('article[data-id] [data-favorito]').first().click();
+    const toastClaro = page.locator('div[role="status"] .toast').last();
+    await expect(toastClaro).toBeVisible();
+    await expect(toastClaro).toContainText(/favoritos/);
+    const fondoClaro = await toastClaro.evaluate((n) => getComputedStyle(n).backgroundColor);
+    expect(fondoClaro).toMatch(/^rgb\(/); // rgb(...) sin alpha => opaco
+
+    // Tema oscuro: el acento cambia y sigue siendo opaco.
+    await page.click('#btn-tema');
+    await expect(page.locator('html')).toHaveClass(/dark/);
+    await page.locator('article[data-id] [data-favorito]').nth(1).click();
+    const toastOscuro = page.locator('div[role="status"] .toast').last();
+    await expect(toastOscuro).toBeVisible();
+    const fondoOscuro = await toastOscuro.evaluate((n) => getComputedStyle(n).backgroundColor);
+    expect(fondoOscuro).toMatch(/^rgb\(/);
+    expect(fondoOscuro).not.toBe(fondoClaro);
+
+    // Contenedor por encima de las scanlines CRT (z-index 100).
+    const zIndex = await page
+      .locator('div[role="status"]')
+      .evaluate((n) => getComputedStyle(n).zIndex);
+    expect(zIndex).toBe('110');
+  });
 });

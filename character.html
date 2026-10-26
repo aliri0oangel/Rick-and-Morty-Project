@@ -60,6 +60,9 @@
     <!-- Tema antes del primer pintado (sin flash) -->
     <script src="./src/services/theme-boot.js"></script>
 
+    <!-- Guardia de sesión pre-paint: sin sesión NO se pinta el detalle -->
+    <script src="./src/services/session-boot.js" data-auth="protected"></script>
+
     <!-- Rendimiento: conexión temprana con la API -->
     <link rel="preconnect" href="https://rickandmortyapi.com" />
   </head>

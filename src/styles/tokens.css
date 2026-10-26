@@ -111,6 +111,13 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Guardia de sesión pre-paint (session-boot.js): si una página protegida
+   va a redirigir al login, el body permanece oculto durante el replace
+   (el fondo del html ya tiene el tema correcto => no hay flash blanco). */
+html.auth-redirect body {
+  visibility: hidden;
+}
+
 /* Títulos: VT323 (display temático). Nota: los HTML aún llevan utilidades
    font-bold heredadas; Fase 3 las retira al reestilizar cada página. */
 h1,
