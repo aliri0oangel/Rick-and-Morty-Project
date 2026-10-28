@@ -8,7 +8,7 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://rickandmortyapi.com data:; connect-src https://rickandmortyapi.com; object-src 'none'; base-uri 'self'; form-action 'self'"
     />
-    <title>Iniciar sesión · Web-Manual</title>
+    <title>Iniciar sesión · Catalogo interdimensional</title>
     <!-- SEO (T6.1) -->
     <meta
       name="description"
@@ -18,16 +18,16 @@
     <meta name="theme-color" id="meta-theme-color" content="#0b0c10" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Web-Manual" />
+    <meta property="og:site_name" content="Catálogo interdimensional" />
     <meta property="og:locale" content="es_ES" />
-    <meta property="og:title" content="Iniciar sesión · Web-Manual" />
+    <meta property="og:title" content="Iniciar sesión · Catálogo interdimensional" />
     <meta
       property="og:description"
       content="Accede a tu terminal interdimensional y gestiona tus favoritos."
     />
     <meta property="og:url" content="./login.html" />
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Iniciar sesión · Web-Manual" />
+    <meta name="twitter:title" content="Iniciar sesión · Catálogo interdimensional" />
     <meta
       name="twitter:description"
       content="Accede a tu terminal interdimensional y gestiona tus favoritos."
@@ -59,31 +59,75 @@
     <script src="./src/services/theme-boot.js"></script>
   </head>
   <body>
-    <section id="login" class="relative flex flex-col items-center justify-center min-h-screen p-4">
+    <!-- Canvas de Malla Cuántica Multiversal (Fondo interactivo) -->
+    <canvas id="canvas-malla" class="malla-canvas" aria-hidden="true"></canvas>
+
+    <!-- HUD de telemetría interdimensional -->
+    <aside
+      id="hud-interdimensional"
+      class="hud-card pointer-events-none fixed top-4 left-4 z-20 hidden sm:block text-[11px] font-terminal text-info p-3 rounded-lg border border-line space-y-1"
+      aria-label="Telemetría de portal interdimensional"
+    >
+      <div class="flex items-center justify-between gap-4">
+        <span class="text-dim">DIMENSIÓN:</span>
+        <span class="font-bold text-brand" id="hud-dimension">C-137</span>
+      </div>
+      <div class="flex items-center justify-between gap-4">
+        <span class="text-dim">FRECUENCIA:</span>
+        <span id="hud-frecuencia">137.942 MHz</span>
+      </div>
+      <div class="flex items-center justify-between gap-4">
+        <span class="text-dim">COORDENADAS:</span>
+        <span id="hud-coordenadas" class="font-mono">X: 0 | Y: 0</span>
+      </div>
+      <div class="flex items-center justify-between gap-4">
+        <span class="text-dim">ESTADO:</span>
+        <span class="text-info font-semibold" id="hud-estado">SINCRONIZADO</span>
+      </div>
+    </aside>
+
+    <section
+      id="login"
+      class="relative z-10 flex flex-col items-center justify-center min-h-screen p-4"
+    >
       <!-- Toggle de tema (esta página no tiene header) -->
       <button
         type="button"
         id="btn-tema"
         aria-label="Cambiar tema"
-        class="btn btn-ghost p-2 rounded-full absolute top-4 right-4"
+        class="btn btn-ghost p-2 rounded-full absolute top-4 right-4 z-20"
       ></button>
 
+      <!-- Pill superior de terminal multiversal -->
+      <div
+        class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] tracking-wider uppercase bg-info-soft text-info border border-info/30 mb-2"
+      >
+        <span>●</span> Acceso a Terminal Multiversal
+      </div>
+
       <!-- Terminal de portal (T3.1): título display glitch -->
-      <h1 class="glitch font-display text-4xl text-ink mb-4" data-text="LogIn">Bienvenido</h1>
+      <h1 class="glitch font-display text-4xl sm:text-5xl text-ink mb-1" data-text="Bienvenido">
+        Bienvenido
+      </h1>
+      <p class="text-xs text-dim mb-4 text-center">
+        Identifícate con tus credenciales de la Ciudadela
+      </p>
 
       <form
         action=""
         id="form_login"
         novalidate
-        class="tubo-card cursor-default p-8 w-full max-w-md space-y-4"
+        class="tubo-card cursor-default p-8 w-full max-w-md space-y-4 backdrop-blur-md"
       >
         <div>
-          <label for="correo" class="block text-ink font-medium mb-2">Correo:</label>
+          <label for="correo" class="block text-ink font-medium mb-2"
+            >Correo Interdimensional:</label
+          >
           <input type="email" id="correo" name="correo" autocomplete="email" class="campo w-full" />
         </div>
 
         <div>
-          <label for="password" class="block text-ink font-medium mb-2">Contraseña:</label>
+          <label for="password" class="block text-ink font-medium mb-2">Contraseña Cuántica:</label>
           <input type="password" id="password" name="password" class="campo w-full" />
         </div>
 
@@ -99,7 +143,7 @@
             name="recordar_correo"
             class="w-4 h-4 accent-brand"
           />
-          <label for="recordar_correo" class="text-sm text-dim">Recordar mi correo</label>
+          <label for="recordar_correo" class="text-sm text-dim">Recordar en este portal</label>
         </div>
 
         <!-- role=alert: el lector anuncia el fallo de login en cuanto aparece -->
@@ -113,8 +157,8 @@
         <button type="submit" class="btn btn-primary w-full">Iniciar Sesión</button>
 
         <p class="text-sm text-dim">
-          ¿No tienes cuenta?
-          <a href="./register.html" class="text-brand hover:underline">Regístrate</a>
+          ¿No estás registrado en la Ciudadela?
+          <a href="./register.html" class="text-brand hover:underline">Crear cuenta</a>
         </p>
       </form>
     </section>

@@ -1,5 +1,6 @@
 import { registrarUser, rutaPublica, RUTAS } from '../services/auth.js';
-import { crearControlPassword } from '../ui/components.js';
+import { crearControlPassword, mostrarToast } from '../ui/components.js';
+import { inicializarMallaCuantica } from '../ui/interactive-mesh.js';
 import {
   validarCampo,
   validarCoincidencia,
@@ -10,6 +11,12 @@ import {
 
 document.addEventListener('DOMContentLoaded', () => {
   rutaPublica();
+
+  // Fondo interactivo: Malla Cuántica Multiversal (Opción 2)
+  const canvasMalla = document.querySelector('#canvas-malla');
+  if (canvasMalla) {
+    inicializarMallaCuantica(canvasMalla);
+  }
 
   const form_registro = document.getElementById('form_register');
 
@@ -61,6 +68,8 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
 
     limpiarCampos(todosCampos);
+    const hudEstado = document.getElementById('hud-estado');
+    const originalEstado = hudEstado?.textContent;
 
     const datos = {
       nombre: inputNombre.value.trim(),
@@ -84,20 +93,68 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const userRegistrado = await registrarUser(datos);
+    /**
+     * Pinta un fallo: mensaje en SU campo (si se conoce), glitch y HUD.
+     * Siempre {campo, mensaje}: mostrarErrores() hace
+     * querySelector('#error-<campo>') y con un Error se rompía.
+     * @param {{campo?: string, mensaje?: string}} [fallo]
+     * @returns {void}
+     */
+    const marcarFallo = ({ campo, mensaje } = {}) => {
+      if (campo && mensaje && document.getElementById(`error-${campo}`)) {
+        mostrarErrores({ error: true, campo, mensaje });
+      }
 
-    if (!userRegistrado.exito) {
-      mostrarErrores(userRegistrado);
-      return;
+      // Efecto Glitch de Error
+      form_registro.classList.add('glitch-error');
+      setTimeout(() => form_registro.classList.remove('glitch-error'), 300);
+
+      if (hudEstado) {
+        hudEstado.textContent = 'ERROR DE DATOS';
+        hudEstado.className = 'text-danger font-semibold';
+        setTimeout(() => {
+          hudEstado.textContent = originalEstado || 'SINCRONIZADO';
+          hudEstado.className = 'text-info font-semibold';
+        }, 3000);
+      }
+    };
+
+    try {
+      if (hudEstado) {
+        hudEstado.textContent = 'SINCRONIZANDO...';
+        hudEstado.className = 'text-brand font-semibold';
+      }
+
+      const userRegistrado = await registrarUser(datos);
+
+      if (!userRegistrado.exito) {
+        // Fallo de negocio (p.ej. correo duplicado): mensaje en SU campo.
+        marcarFallo({
+          campo: userRegistrado.campo,
+          mensaje: userRegistrado.mensaje || 'Error en el registro',
+        });
+        return;
+      }
+
+      form_registro.reset();
+      btnRegister.disabled = true;
+      btnRegister.classList.add('opacity-50', 'cursor-not-allowed');
+      mensajeExito.classList.remove('hidden');
+
+      if (hudEstado) {
+        hudEstado.textContent = 'SINCRO COMPLETA';
+        hudEstado.className = 'text-info font-semibold';
+      }
+
+      setTimeout(() => {
+        window.location.href = RUTAS.login;
+      }, 1000);
+    } catch (error) {
+      // Fallo inesperado (storage/crypto/red): sin campo asociado,
+      // se avisa con toast y el HUD + glitch marcan el error.
+      console.error('[registro] Error inesperado:', error);
+      mostrarToast(error?.message || 'No se pudo completar el registro.', 'error');
+      marcarFallo();
     }
-
-    form_registro.reset();
-    btnRegister.disabled = true;
-    btnRegister.classList.add('opacity-50', 'cursor-not-allowed');
-    mensajeExito.classList.remove('hidden');
-
-    setTimeout(() => {
-      window.location.href = RUTAS.login;
-    }, 1000);
   });
 });

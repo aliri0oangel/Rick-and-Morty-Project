@@ -3,6 +3,7 @@ import { guardarSesion } from '../core/storage.js';
 import { leerCookie, guardarRecordarCorreo } from '../core/cookies.js';
 import { crearControlPassword } from '../ui/components.js';
 import { COOKIE_KEYS, MAX_INTENTOS_LOGIN, BLOQUEO_INTENTOS_MIN } from '../config/config.js';
+import { inicializarMallaCuantica } from '../ui/interactive-mesh.js';
 
 /* --------------------------------------------------------------
  * Control de intentos fallidos (seguridad anti fuerza bruta).
@@ -71,6 +72,12 @@ function limpiarIntentos(correo) {
 document.addEventListener('DOMContentLoaded', () => {
   rutaPublica();
 
+  // Fondo interactivo: Malla Cuántica Multiversal (Opción 2)
+  const canvasMalla = document.querySelector('#canvas-malla');
+  if (canvasMalla) {
+    inicializarMallaCuantica(canvasMalla);
+  }
+
   const form_login = document.querySelector('#form_login');
   const inputCorreo = document.querySelector('#correo');
   const inputPassword = document.querySelector('#password');
@@ -113,6 +120,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const correo = inputCorreo.value.trim();
     const password = inputPassword.value.trim();
+    const hudEstado = document.getElementById('hud-estado');
+    const originalEstado = hudEstado?.textContent;
 
     if (correo === '' || password === '') {
       mostrarError('Por favor, completa todos los campos.');
@@ -127,38 +136,59 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    /* --- 2) Autenticación (async por el hash) --- */
-    const resultado = await loginUser(correo, password);
+    try {
+      if (hudEstado) {
+        hudEstado.textContent = 'SINCRONIZANDO...';
+        hudEstado.className = 'text-brand font-semibold';
+      }
 
-    if (!resultado.exito) {
+      /* --- 2) Autenticación (async por el hash) --- */
+      const resultado = await loginUser(correo, password);
+
+      if (!resultado.exito) {
+        throw new Error(resultado.mensaje);
+      }
+
+      /* --- 3) Éxito --- */
+      limpiarIntentos(correo);
+      ocultarError();
+      btn_login.disabled = true;
+      btn_login.classList.add('opacity-50', 'cursor-not-allowed');
+
+      /* --------------------------------------------------------------
+       * Cookie de preferencia: crear/borrar según la casilla, SIEMPRE
+       * después del login exitoso (nunca se guarda un correo fallido).
+       * -------------------------------------------------------------- */
+      guardarRecordarCorreo(checkRecordar?.checked === true, correo);
+
+      /* --- 4) Sesión SIN contraseña (ni en claro ni hasheada) ---
+       * Las credenciales jamás deben viajar en la sesión (seguridad). */
+      const { password: _omitida, ...enSesion } = resultado.usuario;
+      guardarSesion(enSesion);
+
+      setTimeout(() => {
+        window.location.href = RUTAS.index;
+      }, 1000);
+    } catch (error) {
       const { bloqueado, restantes } = registrarIntentoFallido(correo);
       mostrarError(
         bloqueado
           ? `Cuenta bloqueada temporalmente (${BLOQUEO_INTENTOS_MIN} min) por intentos fallidos.`
-          : `${resultado.mensaje} Intentos restantes: ${restantes}.`
+          : `${error.message} Intentos restantes: ${restantes}.`
       );
-      return;
+
+      // Efecto Glitch de Error
+      form_login.classList.add('glitch-error');
+      setTimeout(() => form_login.classList.remove('glitch-error'), 300);
+
+      if (hudEstado) {
+        hudEstado.textContent = 'ERROR DE ACCESO';
+        hudEstado.className = 'text-danger font-semibold';
+        setTimeout(() => {
+          hudEstado.textContent = originalEstado || 'SINCRONIZADO';
+          hudEstado.className = 'text-info font-semibold';
+        }, 3000);
+      }
     }
-
-    /* --- 3) Éxito --- */
-    limpiarIntentos(correo);
-    ocultarError();
-    btn_login.disabled = true;
-    btn_login.classList.add('opacity-50', 'cursor-not-allowed');
-
-    /* --------------------------------------------------------------
-     * Cookie de preferencia: crear/borrar según la casilla, SIEMPRE
-     * después del login exitoso (nunca se guarda un correo fallido).
-     * -------------------------------------------------------------- */
-    guardarRecordarCorreo(checkRecordar?.checked === true, correo);
-
-    /* --- 4) Sesión SIN contraseña (ni en claro ni hasheada) ---
-     * Las credenciales jamás deben viajar en la sesión (seguridad). */
-    const { password: _omitida, ...enSesion } = resultado.usuario;
-    guardarSesion(enSesion);
-
-    setTimeout(() => {
-      window.location.href = RUTAS.index;
-    }, 1000);
   });
 });

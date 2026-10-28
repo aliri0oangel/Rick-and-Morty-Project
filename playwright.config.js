@@ -42,6 +42,8 @@ export default defineConfig({
     url: 'http://localhost:4173/index.html',
     // Sin livereload: sus recargas espurios (tmp/antivirus) rompían tests.
     env: { ...process.env, NO_LIVERELOAD: '1' },
+    // Nunca reutilizar un server externo: un dev server con livereload
+    // activo (o con otro código) introduce tests flaky.
     reuseExistingServer: false,
     timeout: 15_000,
   },

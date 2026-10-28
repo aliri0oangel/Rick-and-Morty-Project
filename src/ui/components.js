@@ -18,11 +18,17 @@ import { evaluarFuerza } from '../domain/validators.js';
    STATUS BADGE (Fase 1: vivo=cian · muerto=magenta · desconocido=ámbar)
    ================================================================== */
 
-/** Mapa OCP: para soportar un estado nuevo basta una entrada. */
+/** Mapa OCP: claves en español (datos ya traducidos por la capa de
+ *  servicio) + valores en inglés de favoritos guardados antes de esa
+ *  unificación. */
 const BADGE_POR_ESTADO = {
+  Vivo: { clase: 'badge-vivo', etiqueta: 'Vivo' },
+  Muerto: { clase: 'badge-muerto', etiqueta: 'Muerto' },
+  Desconocido: { clase: 'badge-desconocido', etiqueta: 'Desconocido' },
   Alive: { clase: 'badge-vivo', etiqueta: 'Vivo' },
   Dead: { clase: 'badge-muerto', etiqueta: 'Muerto' },
   unknown: { clase: 'badge-desconocido', etiqueta: 'Desconocido' },
+  Unknown: { clase: 'badge-desconocido', etiqueta: 'Desconocido' },
 };
 
 /** Entrada defensiva para estados fuera del mapa (la API puede crecer). */
@@ -30,7 +36,7 @@ const BADGE_POR_DEFECTO = { clase: 'badge-desconocido', etiqueta: 'Desconocido' 
 
 /**
  * Crea el badge de estado de un personaje.
- * @param {string} estado - "Alive" | "Dead" | "unknown" | (nuevo).
+ * @param {string} estado - "Vivo" | "Muerto" | "Desconocido" (o legado en inglés).
  * @returns {HTMLElement} <span class="badge badge-*">
  */
 export function crearBadgeEstado(estado) {

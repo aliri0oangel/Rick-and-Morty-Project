@@ -61,7 +61,7 @@
     <!-- Guardia de sesión pre-paint: sin sesión NO se pinta la cuenta -->
     <script src="./src/services/session-boot.js" data-auth="protected"></script>
   </head>
-  <body>
+  <body class="con-lienzo">
     <!-- Header inyectado por src/ui/header.js (nav + tema + sesión). -->
 
     <main id="contenido" class="min-h-screen flex flex-col items-center p-4 pt-10 pb-12">
@@ -96,6 +96,7 @@
       </form>
     </main>
 
+    <script type="module" src="./src/controllers/background-init.js"></script>
     <script type="module" src="./src/services/theme-toggle.js"></script>
     <script type="module" src="./src/controllers/account.js"></script>
   </body>

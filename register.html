@@ -8,26 +8,26 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://rickandmortyapi.com data:; connect-src https://rickandmortyapi.com; object-src 'none'; base-uri 'self'; form-action 'self'"
     />
-    <title>Registro · Web-Manual</title>
+    <title>Registro · Catálogo interdimensional</title>
     <!-- SEO (T6.1) -->
     <meta
       name="description"
-      content="Crea tu cuenta en Web-Manual y empieza a guardar tus personajes favoritos de Rick and Morty."
+      content="Crea tu cuenta en Catálogo interdimensional y empieza a guardar tus personajes favoritos de Rick and Morty."
     />
     <link rel="canonical" href="./register.html" />
     <meta name="theme-color" id="meta-theme-color" content="#0b0c10" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Web-Manual" />
+    <meta property="og:site_name" content="Catálogo interdimensional" />
     <meta property="og:locale" content="es_ES" />
-    <meta property="og:title" content="Registro · Web-Manual" />
+    <meta property="og:title" content="Registro · Catálogo interdimensional" />
     <meta
       property="og:description"
       content="Crea tu cuenta y guarda tus favoritos del multiverso."
     />
     <meta property="og:url" content="./register.html" />
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Registro · Web-Manual" />
+    <meta name="twitter:title" content="Registro · Catálogo interdimensional" />
     <meta
       name="twitter:description"
       content="Crea tu cuenta y guarda tus favoritos del multiverso."
@@ -59,23 +59,60 @@
     <script src="./src/services/theme-boot.js"></script>
   </head>
   <body>
-    <section class="relative flex flex-col items-center justify-center min-h-screen p-4 py-10">
+    <!-- Canvas de Malla Cuántica Multiversal (Fondo interactivo) -->
+    <canvas id="canvas-malla" class="malla-canvas" aria-hidden="true"></canvas>
+
+    <!-- HUD de telemetría interdimensional -->
+    <aside
+      id="hud-interdimensional"
+      class="hud-card pointer-events-none fixed top-4 left-4 z-20 hidden sm:block text-[11px] font-terminal text-info p-3 rounded-lg border border-line space-y-1"
+      aria-label="Telemetría de portal interdimensional"
+    >
+      <div class="flex items-center justify-between gap-4">
+        <span class="text-dim">DIMENSIÓN:</span>
+        <span class="font-bold text-brand" id="hud-dimension">C-137</span>
+      </div>
+      <div class="flex items-center justify-between gap-4">
+        <span class="text-dim">FRECUENCIA:</span>
+        <span id="hud-frecuencia">137.942 MHz</span>
+      </div>
+      <div class="flex items-center justify-between gap-4">
+        <span class="text-dim">COORDENADAS:</span>
+        <span id="hud-coordenadas" class="font-mono">X: 0 | Y: 0</span>
+      </div>
+      <div class="flex items-center justify-between gap-4">
+        <span class="text-dim">ESTADO:</span>
+        <span class="text-info font-semibold" id="hud-estado">SINCRONIZADO</span>
+      </div>
+    </aside>
+
+    <section class="relative z-10 flex flex-col items-center justify-center min-h-screen p-4 py-10">
       <!-- Toggle de tema (esta página no tiene header) -->
       <button
         type="button"
         id="btn-tema"
         aria-label="Cambiar tema"
-        class="btn btn-ghost p-2 rounded-full absolute top-4 right-4"
+        class="btn btn-ghost p-2 rounded-full absolute top-4 right-4 z-20"
       ></button>
 
+      <!-- Pill superior de terminal multiversal -->
+      <div
+        class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] tracking-wider uppercase bg-brand-soft text-brand border border-brand/30 mb-2"
+      >
+        <span>●</span> Alta de Usuario Multiversal
+      </div>
+
       <!-- Terminal de portal (T3.1): título display glitch -->
-      <h1 class="glitch font-display text-4xl text-ink mb-4" data-text="Registro">Registro</h1>
+      <h1 class="glitch font-display text-4xl sm:text-5xl text-ink mb-1" data-text="Registro">
+        Registro
+      </h1>
+      <p class="text-xs text-dim mb-4 text-center">Genera tu pase seguro entre dimensiones</p>
 
       <form
         id="form_register"
         action=""
         novalidate
-        class="tubo-card cursor-default p-8 w-full max-w-md space-y-4"
+        class="tubo-card cursor-default p-8 w-full max-w-md space-y-4 backdrop-blur-md"
       >
         <div>
           <label for="nombre" class="block text-ink font-medium mb-2">Nombre:</label>
@@ -145,7 +182,7 @@
         </div>
 
         <p class="text-sm text-dim">
-          Posees una cuenta?
+          ¿Ya tienes un clon registrado?
           <a href="./login.html" class="text-brand hover:underline">Inicia sesión</a>
         </p>
 
@@ -153,7 +190,9 @@
           Cuenta creada. Redirigiendo al acceso…
         </p>
 
-        <button type="submit" class="btn btn-primary w-full" id="btn_register">Registrarse</button>
+        <button type="submit" class="btn btn-primary w-full" id="btn_register">
+          Registrarse en la Red
+        </button>
       </form>
     </section>
 

@@ -7,7 +7,7 @@
  * aquí mismo: este archivo es el único que los compone).
  *
  * Funcionalidades (Fase 3 / T3.2):
- *  - Catálogo paginado (20 por página) con "Cargar más" + spinner.
+ *  - Catálogo paginado por páginas (20 por página) con controles numéricos.
  *  - Buscador por nombre con debounce + indicador visual de búsqueda.
  *  - Filtros estado/especie (endpoint combinado de la API) + orden
  *    client-side (mapa OCP en ui/characters.js).
@@ -17,7 +17,7 @@
 
 import { rutaProtegida, idDeUsuario } from '../services/auth.js';
 import { obtenerSesion } from '../core/storage.js';
-import { obtenerPersonajes, buscarPersonajes } from '../services/characters-api.js';
+import { obtenerPagina } from '../services/characters-api.js';
 import {
   renderizarPersonajes,
   montarGridDelegacion,
@@ -26,6 +26,7 @@ import {
 } from '../ui/characters.js';
 import { crearZonaPersonajes } from '../ui/page-states.js';
 import { montarHeader } from '../ui/header.js';
+import { montarFooter } from '../ui/footer.js';
 import { mostrarToast } from '../ui/components.js';
 import { navegar } from '../ui/view-transitions.js';
 import { esFavorito, alternarFavorito } from '../services/favorites-repository.js';
@@ -58,15 +59,39 @@ document.addEventListener('DOMContentLoaded', () => {
   const selEspecie = document.getElementById('filtro-especie');
   const selOrden = document.getElementById('orden');
   const indicadorBusqueda = document.getElementById('indicador-busqueda');
-  const contenedorMas = document.getElementById('contenedor-cargar-mas');
-  const btnCargarMas = document.getElementById('btn-cargar-mas');
+  const contenedorPaginacion = document.getElementById('contenedor-paginacion');
+  const controlesPaginacion = document.getElementById('paginacion-controles');
+  const infoPaginacion = document.getElementById('paginacion-info');
+  const btnSubirInicio = document.getElementById('btn-subir-inicio');
 
   /* ---------------- Estado del controlador ---------------- */
-  let paginaActual = 1; // última página pedida a la API
+  let paginaActual = 1; // página actual activa
+  let totalPaginas = 1; // total de páginas según la API
   let listaCargada = []; // datos crudos acumulados (base para ordenar)
   let relojBusqueda = null; // timer del debounce
   let secuencia = 0; // token anti-respuestas-obsoletas
-  let cargandoPagina = false; // bloqueo doble clic en "Cargar más"
+  let cargandoPagina = false; // bloqueo para evitar peticiones duplicadas
+
+  /* ---------------- Implementación del botón Subir al Inicio ---------------- */
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 400) {
+      btnSubirInicio?.classList.add('visible');
+      btnSubirInicio?.classList.remove('pointer-events-none');
+    } else {
+      btnSubirInicio?.classList.remove('visible');
+      btnSubirInicio?.classList.add('pointer-events-none');
+    }
+  });
+
+  btnSubirInicio?.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  /* ---------------- Cursor pointer en interactivos ---------------- */
+  const interactivos = [selEstado, selEspecie, selOrden, btnLimpiar];
+  interactivos.forEach((el) => {
+    if (el) el.style.cursor = 'pointer';
+  });
 
   /* --------------------------------------------------------------
    * Consulta de favoritos inyectada al render (Dependency Inversion)
@@ -111,12 +136,75 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   /**
-   * Muestra u oculta el bloque "Cargar más".
+   * Muestra u oculta el bloque de paginación.
    * @param {boolean} visible
    * @returns {void}
    */
-  const mostrarCargarMas = (visible) => {
-    contenedorMas?.classList.toggle('hidden', !visible);
+  const mostrarPaginacion = (visible) => {
+    contenedorPaginacion?.classList.toggle('hidden', !visible);
+  };
+
+  /**
+   * Renderiza los botones de navegación de página.
+   * @returns {void}
+   */
+  const renderizarPaginacion = () => {
+    if (!controlesPaginacion) return;
+    controlesPaginacion.innerHTML = '';
+
+    // Botón Anterior (type=button: nunca envía/recrea el formulario)
+    const btnAnt = document.createElement('button');
+    btnAnt.type = 'button';
+    btnAnt.className = `btn btn-ghost ${paginaActual === 1 ? 'opacity-50 pointer-events-none' : ''}`;
+    btnAnt.textContent = '← Anterior';
+    btnAnt.disabled = paginaActual === 1;
+    // El aria-label SIEMPRE contiene el texto visible (WCAG 2.5.3:
+    // label-content-name-mismatch lo marca como "serious" en axe).
+    btnAnt.setAttribute('aria-label', `← Anterior (página ${Math.max(1, paginaActual - 1)})`);
+    btnAnt.onclick = () => cargar({ pagina: paginaActual - 1 });
+    controlesPaginacion.appendChild(btnAnt);
+
+    // Números de página (mostramos un rango para no saturar la UI)
+    const rango = 2;
+    for (let i = 1; i <= totalPaginas; i++) {
+      if (
+        i === 1 ||
+        i === totalPaginas ||
+        (i >= paginaActual - rango && i <= paginaActual + rango)
+      ) {
+        const btnPag = document.createElement('button');
+        btnPag.type = 'button';
+        btnPag.className = `btn ${paginaActual === i ? 'btn-primary' : 'btn-ghost'}`;
+        btnPag.textContent = i;
+        btnPag.disabled = paginaActual === i;
+        btnPag.setAttribute('aria-label', `Ir a la página ${i}`);
+        if (paginaActual === i) btnPag.setAttribute('aria-current', 'page');
+        btnPag.onclick = () => cargar({ pagina: i });
+        controlesPaginacion.appendChild(btnPag);
+      } else if (i === paginaActual - rango - 1 || i === paginaActual + rango + 1) {
+        const span = document.createElement('span');
+        span.textContent = '...';
+        span.className = 'px-2 text-dim';
+        controlesPaginacion.appendChild(span);
+      }
+    }
+
+    // Botón Siguiente
+    const btnSig = document.createElement('button');
+    btnSig.type = 'button';
+    btnSig.className = `btn btn-ghost ${paginaActual === totalPaginas ? 'opacity-50 pointer-events-none' : ''}`;
+    btnSig.textContent = 'Siguiente →';
+    btnSig.disabled = paginaActual === totalPaginas;
+    btnSig.setAttribute(
+      'aria-label',
+      `Siguiente → (página ${Math.min(totalPaginas, paginaActual + 1)})`
+    );
+    btnSig.onclick = () => cargar({ pagina: paginaActual + 1 });
+    controlesPaginacion.appendChild(btnSig);
+
+    if (infoPaginacion) {
+      infoPaginacion.textContent = `Terminal: Página ${paginaActual} de ${totalPaginas}`;
+    }
   };
 
   /**
@@ -145,19 +233,32 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   /* ==============================================================
-   * 1) CARGA UNIFICADA — página 1 (reemplazo) o siguientes (append)
+   * 1) CARGA UNIFICADA — página 1 (reemplazo) o cualquier página
    * ============================================================== */
 
   /**
    * Trae una página (con o sin filtros) y pinta la UI correspondiente.
    * Los filtros de estado/especie van al endpoint de la API (combinables
    * con name y page); sin filtros se usa la caché de páginas intacta.
-   * @param {{reemplazar?: boolean}} [opciones]
+   * @param {{reemplazar?: boolean, pagina?: number}} [opciones]
    * @returns {Promise<void>}
    */
-  async function cargar({ reemplazar = false } = {}) {
+  async function cargar({ reemplazar = false, pagina = null } = {}) {
+    // Bloqueo de doble clic: solo UNA petición de página en vuelo.
+    if (!reemplazar && cargandoPagina) return;
+
     const miSecuencia = ++secuencia; // descarta respuestas obsoletas
-    const pagina = reemplazar ? 1 : paginaActual + 1;
+
+    // Determinamos qué página pedir
+    let paginaAPedir;
+    if (pagina !== null) {
+      paginaAPedir = pagina;
+    } else if (reemplazar) {
+      paginaAPedir = 1;
+    } else {
+      paginaAPedir = paginaActual + 1;
+    }
+
     const filtros = leerFiltros();
 
     if (reemplazar) {
@@ -165,16 +266,17 @@ document.addEventListener('DOMContentLoaded', () => {
       paginaActual = 1;
       zona.pintarSkeletons(8);
       zona.mostrar('cargando');
-      mostrarCargarMas(false);
+      mostrarPaginacion(false);
     }
 
+    cargandoPagina = true; // se libera en finally (solo el dueño de la petición)
     try {
-      // Sin filtros => endpoint crudo con caché de sessionStorage.
-      const nuevos = hayFiltros()
-        ? await buscarPersonajes({ ...filtros, pagina: reemplazar ? 1 : pagina })
-        : await obtenerPersonajes(pagina);
+      const { info, results } = await obtenerPagina(paginaAPedir, filtros);
 
       if (miSecuencia !== secuencia) return; // otra carga lo adelantó
+
+      const nuevos = results;
+      totalPaginas = Math.max(1, Number(info?.pages) || 1);
 
       if (reemplazar && nuevos.length === 0) {
         const hayTexto = Boolean(filtros.nombre);
@@ -189,32 +291,33 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (!reemplazar && nuevos.length === 0) {
-        // Fin de la lista (última página o fin de resultados filtrados).
-        mostrarCargarMas(false);
+        mostrarPaginacion(false);
         return;
       }
 
-      if (reemplazar) {
-        listaCargada = nuevos;
-      } else {
-        listaCargada = [...listaCargada, ...nuevos];
-        paginaActual = pagina;
-      }
+      // La paginación reemplaza la página mostrada (sin acumular).
+      listaCargada = nuevos;
+      paginaActual = paginaAPedir;
 
       pintarGrid();
       zona.mostrar('grid');
-      mostrarCargarMas(true);
+      mostrarPaginacion(true);
+      renderizarPaginacion();
       pintarIndicador();
+
+      // UX: scroll al grid SOLO al paginar; la primera pintura respeta el hero.
+      if (paginaAPedir > 1) {
+        zona.grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     } catch (error) {
       if (miSecuencia !== secuencia) return;
       console.error('[index] Error cargando personajes:', error);
-      // 404 al paginar = fin natural de la lista, no un error.
+      // 404 de negocio fuera de la primera página: fin de lista, no error.
       if (!reemplazar && error.status === 404) {
-        mostrarCargarMas(false);
+        mostrarPaginacion(false);
         return;
       }
       if (!reemplazar && listaCargada.length > 0) {
-        // No perder lo ya cargado: se avisa en el indicador.
         const indicador = document.getElementById('indicador-lista');
         if (indicador) {
           indicador.textContent = 'No se pudieron cargar más personajes. Intenta de nuevo.';
@@ -223,34 +326,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       zona.setError(error.message || 'Error desconocido al cargar.');
     } finally {
-      if (miSecuencia === secuencia) mostrarSpinnerBusqueda(false);
+      // Solo el dueño actual de la petición libera el bloqueo.
+      if (miSecuencia === secuencia) {
+        cargandoPagina = false;
+        mostrarSpinnerBusqueda(false);
+      }
     }
   }
 
   /* ==============================================================
-   * 2) CARGAR MÁS (paginación 20 en 20, con filtros incluidos)
-   * ============================================================== */
-  btnCargarMas?.addEventListener('click', async () => {
-    if (cargandoPagina) return; // bloqueo doble clic
-    cargandoPagina = true;
-    btnCargarMas.disabled = true;
-    btnCargarMas.classList.add('opacity-50', 'cursor-not-allowed');
-    // Spinner inline + texto: feedback de progreso visible (T3.2).
-    btnCargarMas.innerHTML =
-      '<span class="inline-flex items-center gap-2"><svg class="w-4 h-4 animate-spin" aria-hidden="true"><use href="#icon-loader"/></svg>Cargando…</span>';
-
-    try {
-      await cargar();
-    } finally {
-      cargandoPagina = false;
-      btnCargarMas.disabled = false;
-      btnCargarMas.classList.remove('opacity-50', 'cursor-not-allowed');
-      btnCargarMas.textContent = 'Cargar más';
-    }
-  });
-
-  /* ==============================================================
-   * 3) BUSCADOR + FILTROS + ORDEN (T3.2)
+   * 2) BUSCADOR + FILTROS + ORDEN (T3.2)
    * ============================================================== */
 
   // Debounce: solo busca 400ms DESPUÉS de que el usuario deja de escribir
@@ -294,7 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ==============================================================
-   * 4) EVENTOS DE LA GRID (delegación compartida con favorites)
+   * 3) EVENTOS DE LA GRID (delegación compartida con favorites)
    * ============================================================== */
   montarGridDelegacion(zona.grid, {
     // ♥ => alternar favorito, reflejar el estado y avisar con toast.
@@ -327,4 +412,5 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ---------------- Arranque ---------------- */
   actualizarBotonLimpiar();
   cargar({ reemplazar: true });
+  montarFooter(document.getElementById('contenido'));
 });

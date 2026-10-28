@@ -66,7 +66,7 @@
     <!-- Rendimiento: conexión temprana con la API -->
     <link rel="preconnect" href="https://rickandmortyapi.com" />
   </head>
-  <body>
+  <body class="con-lienzo">
     <!-- Header inyectado por src/ui/header.js (nav + tema + sesión). -->
 
     <main id="contenido" class="min-h-screen">
@@ -150,6 +150,7 @@
       </article>
     </main>
 
+    <script type="module" src="./src/controllers/background-init.js"></script>
     <script type="module" src="./src/services/theme-toggle.js"></script>
     <script type="module" src="./src/controllers/character.js"></script>
   </body>

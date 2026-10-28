@@ -100,6 +100,14 @@
    3) BASE GLOBAL
    ========================================================================== */
 
+/* Superficie del tema en el VIEWPORT: pinta el html con el MISMO token que
+   body. (Los HTML mantienen además color crítico inline para el primer
+   pintado, antes de cargar dist/app.css; aquí manda el token.) */
+html,
+html:not(.dark) {
+  background-color: var(--app-bg);
+}
+
 /* Cuerpo: IBM Plex Mono (§3.4) sobre la superficie del tema activo */
 body {
   font-family: var(--font-terminal);
@@ -109,6 +117,14 @@ body {
   color: var(--app-ink);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Páginas con lienzo de fondo fijo (canvas z-index:-1, ui/catalog-background.js):
+   el body NO pinta color propio para no TAPAR el lienzo; la superficie del
+   tema la pinta el viewport (html) con el mismo token. Sin !important:
+   la especificidad de la clase gana a la regla body anterior. */
+body.con-lienzo {
+  background-color: transparent;
 }
 
 /* Guardia de sesión pre-paint (session-boot.js): si una página protegida

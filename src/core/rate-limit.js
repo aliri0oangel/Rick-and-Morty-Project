@@ -91,20 +91,3 @@ export function esperar(ms) {
   const tope = Math.max(0, Math.min(ms, API_TIMEOUT_MS * 2));
   return new Promise((resolver) => setTimeout(resolver, tope));
 }
-
-/**
- * Estado del bucket (para tests / depuración).
- * @returns {{fichas: number, enCola: number}}
- */
-export function estadoRateLimit() {
-  return { fichas, enCola: cola.length };
-}
-
-/**
- * Reinicia el bucket (solo para tests automatizados).
- * @returns {void}
- */
-export function reiniciarRateLimit() {
-  fichas = API_RATE_MAX_TOKENS;
-  cola.length = 0;
-}
