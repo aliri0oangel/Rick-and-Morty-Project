@@ -248,8 +248,8 @@ pnpm add -D tailwindcss@4 @tailwindcss/cli prettier eslint eslint-plugin-html \
 
 - `T5.1` ✅ **CERRADO** — CSS crítico inline en los 6 HTML + `404.html` (background por tema, evita FOUC de primer paint) + `content-visibility: auto` + `contain-intrinsic-size` en `article[data-id]`.
 - `T5.2` ✅ **CERRADO** — `loading="lazy"`/`decoding="async"` existentes + `fetchpriority="high"` en LCP del detalle + fade-in `.img-fade` (opacity 0→1 al cargar) como placeholder sin salto. _(Blur-up descartado: añadiría decode costosa sin retorno medible.)_
-- `T5.3` ✅ **CERRADO** — Caché SWR en `characters-api.js`: memoria + sessionStorage versionada (`v2`, TTL 5min), stale → revalidación en fondo, reintentos backoff 300/600ms (2×) solo para fallos transitorios, `AbortController` en `pagehide`, 404 de negocio sin reintento.
-- `T5.4` ✅ **CERRADO** — Módulos ES (`type="module"`, sin re-descargas: build local versionado por deploy) + medición con presupuestos: **`pnpm audit:budgets`** (CSS < 20KB gzip · JS < 60KB gzip) en `scripts/audit-budgets.mjs`.
+- `T5.3` ✅ **CERRADO** — Caché SWR en `characters-api.js`: memoria + sessionStorage versionada (`v3`, TTL 5min), stale → revalidación en fondo, reintentos backoff 300/600ms (2×) solo para fallos transitorios, `AbortController` en `pagehide`, 404 de negocio sin reintento.
+- `T5.4` ✅ **CERRADO** — Módulos ES (`type="module"`, sin re-descargas: build local versionado por deploy) + medición con presupuestos: **`pnpm audit:budgets`** (CSS < 20KB gzip · JS < 65KB gzip) en `scripts/audit-budgets.mjs`.
 - `T5.5` ✅ **CERRADO** — Script `pnpm audit:lighthouse` (Lighthouse CLI con presets; requiere `pnpm dev` + red — comandos en README §QA).
 
 ✅ **Aceptación (automatizable local):** budgets en verde (CSS ~7.5KB · JS ~55KB gzip); Lighthouse ≥ 90 queda como medición manual/CI documentada en README (navegador externo no instalado en el repo).
@@ -408,7 +408,7 @@ _Regla rectora (`frontend-design-direction`): motion de alta señal — nada dec
 | LCP                    | ≤ 2.5s (4G throttle)                     |
 | CLS                    | < 0.1                                    |
 | INP                    | < 200ms                                  |
-| JS total               | < 60KB gzip                              |
+| JS total               | < 65KB gzip                              |
 | Requests a CDN externo | 0 (solo `rickandmortyapi.com` + fuentes) |
 
 ### 10.2 Matriz de testing responsive
@@ -527,8 +527,8 @@ Fase 0 (tooling) ──▶ Fase 1 (tokens + dirección visual) ──▶ Fase 2 
 - **T4.4 ✓** `src/ui/view-transitions.js`: `document.startViewTransition` + reduced-motion detectados; `navegar()`/`mejorarEnlaces()` aplicados a nav de cards (catálogo/favoritos) y header.
 - **T5.1 ✓** CSS crítico inline en los 6 HTML + `404.html` + `content-visibility:auto`/`contain-intrinsic-size` en `article[data-id]`.
 - **T5.2 ✓** `fetchpriority="high"` en LCP del detalle + `.img-fade` (blur-up descartado: decode extra sin retorno medible).
-- **T5.3 ✓** SWR en `characters-api.js`: memoria + sessionStorage versionada (`v2`, TTL 5min), revalidación en fondo, backoff 300/600ms solo transitorios, `AbortController` en `pagehide`, 404 sin reintento.
-- **T5.4 ✓** `pnpm audit:budgets` (`scripts/audit-budgets.mjs`): CSS < 20KB gzip · JS < 60KB gzip — **actual CSS ~7.5KB · JS ~55KB PASS**.
+- **T5.3 ✓** SWR en `characters-api.js`: memoria + sessionStorage versionada (`v3`, TTL 5min), revalidación en fondo, backoff 300/600ms solo transitorios, `AbortController` en `pagehide`, 404 sin reintento.
+- **T5.4 ✓** `pnpm audit:budgets` (`scripts/audit-budgets.mjs`): CSS < 20KB gzip · JS < 65KB gzip — **actual CSS ~7.5KB · JS ~55KB PASS**.
 - **T5.5 ✓** `pnpm audit:lighthouse` documentado en README §QA (requiere `pnpm dev`; navegador externo no instalado en repo).
 - **T6.1 ✓** Meta por página (title/description/canonical/OG/Twitter), `theme-color` dinámico por tema (`#meta-theme-color`), `favicon.svg` propio.
 - **T6.2 ✓** `robots.txt` + `sitemap.xml` + `404.html` en la **raíz** (el dev server sirve desde ROOT) con status 404 real en `scripts/dev.mjs`.
@@ -601,6 +601,22 @@ Fase 0 (tooling) ──▶ Fase 1 (tokens + dirección visual) ──▶ Fase 2 
 - **Toast sólido ✓** `mostrarToast()` usa `aviso toast toast-info|toast-error`: fondos opacos `--info`/`--danger` con texto `--on-info`/`--on-danger` (6.10:1 y 5.91:1 en día; 11.20:1 y 6.42:1 en CRT). Contenedor a `z-[110]`, por encima de las scanlines CRT (z-index 100). Los avisos de formulario conservan `.aviso-info`/`.aviso-error` (soft).
 - **Tests ✓** `tests/regressions.spec.js` añade la no-pintura del catálogo (MutationObserver + marca en sessionStorage; validado en rojo al quitar el guard) y la opacidad del toast en ambos temas + z-index del contenedor.
 - **Verificación actual:** `pnpm lint` (0) · `format:check` ✓ · `check:imports` (63/63) · `check:contrast` (28/28) · `build` OK · `audit:budgets` OK (CSS 7.4/20 KB · JS 57.1/60 KB) · **`pnpm test:e2e` 99/99** (suite completa, 5.1 min).
+
+### Correcciones posteriores - UX de catálogo, auth y traducción (2026-10-27)
+
+Rama `fix/ux-catalogo-auth`. Corrige los rompimientos detectados al auditar los cambios recientes del catálogo (paginación), fondos, registro y traducción de datos.
+
+- **Traducción unificada ✓** — `services/characters-api.js` es el ÚNICO punto de traducción (`traducirPersonaje` exportado; claves `unknown`/`Unknown` ambas a "Desconocido": la API real manda minúscula). `mapearPersonaje` ya NO re-traduce (era la doble traducción que rompía badges). `BADGE_POR_ESTADO`/`PESO_ESTADO` con claves en español + valores legados en inglés (compat con favoritos viejos de localStorage).
+- **Fetch crudo eliminado ✓** — el catálogo llamaba `fetch()` directo a la API (sin timeout, rate-limit, reintentos ni caché, y con query sin escapar). Lo reemplaza `obtenerPagina(pagina, filtros)`: devuelve `{info, results}` (lo que exige la paginación), usa `URLSearchParams`, conserva `error.status` (404 de negocio ⇒ lista vacía, no error) y pasa la caché al esquema **v3** (entradas `{info, results}` en vez de lista). `obtenerPersonajes`/`buscarPersonajes` eliminados.
+- **Registro con errores en su campo ✓** — `register.js` ya no lanza `Error` hacia `mostrarErrores()` (rompía con TypeError); nuevo `marcarFallo({campo, mensaje})` pinta el mensaje en `#error-<campo>`, el glitch y el HUD; el catch inesperado avisa con `mostrarToast`.
+- **Fondo sin `!important` ✓** — el color crítico inline de los 6 HTML pasa a `html { background-color: var(--app-bg) }` (`tokens.css`) + `body.con-lienzo { background-color: transparent }` para las páginas con canvas `z-index:-1` (los 4 `!important` inline se eliminan).
+- **Paginación accesible ✓** — botones con `type="button"`, `disabled`, `aria-current="page"`, bloqueo de doble clic (`cargandoPagina`) y `aria-label` que SIEMPRE contiene el texto visible (WCAG 2.5.3: `← Anterior (página N)` / `Siguiente → (página N)`); `scrollIntoView` solo al paginar, no en la primera pintura.
+- **Footer del catálogo ✓** — `montarFooter()` importado en `catalog.js` (antes el import faltaba y el footer nunca se montaba); copyright sin `opacity-60` (el contraste caía a 2.37:1 ⇒ axe `color-contrast` serious).
+- **Glitch de error centralizado ✓** — `.glitch-error`/keyframes movidos de los `<style>` inline de login/register a `components.css`, dentro de `@media (prefers-reduced-motion: no-preference)`.
+- **Infra ✓** — CSP de `index.html` sin `http://localhost:4173` (no es origen de producción); Playwright `reuseExistingServer: false` (un server externo con livereload introducía tests flaky).
+- **Limpieza ✓** — borrado `` src/ui/catalog-background.js` `` (archivo fantasma con backtick en el nombre); trackeados `background-init.js`, `catalog-background.js`, `footer.js`, `interactive-mesh.js`; código muerto retirado: `estadoRateLimit`, `reiniciarRateLimit`, `limpiarCachePersonajes`, `agregarAlCache` + rama `acumular`, iconos `#icon-check`/`#icon-close`, vars sin usar.
+- **Presupuesto JS 64 → 65 KB ✓** — se intentó bajar el peso real (fetch crudo, funciones/iconos muertos, comentarios redundantes): 65.5 → 64.9 KB gzip, sin alcanzar 64. Umbral fijado en **65 KB** con la justificación en la cabecera de `scripts/audit-budgets.mjs` (decisión del usuario).
+- **Verificación actual:** `pnpm lint` (0) · `format:check` ✓ · `check:imports` (67/67) · `check:contrast` (28/28) · `build` OK · `audit:budgets` OK (CSS 7.9/20 KB · JS 64.9/65 KB) · **`pnpm test:e2e` 99/99** (suite completa, 12.1 min).
 
 ---
 
