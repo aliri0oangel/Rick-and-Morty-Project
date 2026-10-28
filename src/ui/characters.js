@@ -84,18 +84,6 @@ export function guardarEnCache(personajes) {
 }
 
 /**
- * ACUMULA personajes en el cache sin borrar los previos.
- * Se usa con el botón "Cargar más" (páginas 2, 3...).
- * @param {Array<Object>} personajes - Nuevos datos a añadir.
- * @returns {void}
- */
-export function agregarAlCache(personajes) {
-  for (const p of personajes) {
-    cachePersonajes.set(String(p.id), p);
-  }
-}
-
-/**
  * Consulta el cache por id.
  * @param {string|number} id - Id del personaje.
  * @returns {Object|undefined} Personaje crudo o undefined.
@@ -109,9 +97,10 @@ export function delCache(id) {
  * ---------------------------------------------------------------- */
 
 /**
- * Traduce un personaje de la API al formato que necesita la card.
- * Si la API cambia, solo se toca aquí (la vista no conoce la API).
- * @param {Object} p - Personaje crudo de la API.
+ * Convierte un personaje ya traducido por la capa de servicio al formato
+ * que necesita la card. NO vuelve a traducir: la traducción vive SOLO en
+ * services/characters-api.js (evita la doble traducción que rompía badges).
+ * @param {Object} p - Personaje procedente de la capa de servicio.
  * @returns {{id, nombre, imagen, alt, especie, meta, estado}}
  */
 export function mapearPersonaje(p) {
@@ -120,10 +109,10 @@ export function mapearPersonaje(p) {
     nombre: p.name || 'Sin nombre',
     imagen: p.image,
     alt: `Retrato de ${p.name || 'personaje'}`,
-    especie: p.species || 'Desconocida',
-    // Línea de meta: género + ubicación actual (datos de la card original)
-    meta: `${p.gender || '?'} · ${p.location?.name || 'Ubicación desconocida'}`,
-    estado: p.status || 'unknown',
+    especie: p.species || 'Desconocido',
+    // Línea de meta: género + ubicación actual
+    meta: `${p.gender || 'Desconocido'} · ${p.location?.name || 'Ubicación desconocida'}`,
+    estado: p.status || 'Desconocido',
   };
 }
 
@@ -134,25 +123,17 @@ export function mapearPersonaje(p) {
 /**
  * Renderiza la lista completa dentro de la grid indicada usando
  * DocumentFragment (UNA inserción al DOM => un solo reflow).
+ * La paginación SIEMPRE reemplaza: cache nuevo + grid limpia.
  * @param {HTMLElement} grid - Nodo grid de la página (inyectado).
- * @param {Array<Object>} personajes - Datos crudos de la API.
+ * @param {Array<Object>} personajes - Datos de la capa de servicio.
  * @param {(id) => boolean} esFavorito - Consulta inyectada (DIP).
- * @param {{acumular?: boolean}} [opciones] - acumular=true añade al final.
  * @returns {number} Nº de cards pintadas en ESTA llamada.
  */
-export function renderizarPersonajes(grid, personajes, esFavorito, opciones = {}) {
+export function renderizarPersonajes(grid, personajes, esFavorito) {
   if (!grid) return 0;
 
-  const { acumular = false } = opciones;
-
-  if (acumular) {
-    // Se AÑADEN al cache y al final del grid (páginas siguientes).
-    agregarAlCache(personajes);
-  } else {
-    // Reemplazo total: cache nuevo + grid limpia.
-    guardarEnCache(personajes);
-    grid.replaceChildren();
-  }
+  guardarEnCache(personajes);
+  grid.replaceChildren();
 
   const fragmento = document.createDocumentFragment();
   for (const p of personajes) {
@@ -174,8 +155,18 @@ export function renderizarPersonajes(grid, personajes, esFavorito, opciones = {}
  * Mapa OCP: añadir un criterio nuevo = una entrada nueva.
  * ---------------------------------------------------------------- */
 
-/** Estado -> peso numérico para ordenar (vivo arriba). */
-const PESO_ESTADO = { Alive: 0, unknown: 1, Dead: 2 };
+/** Estado -> peso numérico para ordenar (vivo arriba).
+ *  Acepta el valor ya traducido (Vivo/Muerto/Desconocido) y también el
+ *  legado en inglés de favoritos guardados antes de unificar traducción. */
+const PESO_ESTADO = {
+  Vivo: 0,
+  Alive: 0,
+  Desconocido: 1,
+  unknown: 1,
+  Unknown: 1,
+  Muerto: 2,
+  Dead: 2,
+};
 
 const ORDENADORES = {
   // Orden natural de la API (ya cacheado): se respeta tal cual.

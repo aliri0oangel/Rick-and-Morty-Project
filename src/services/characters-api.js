@@ -2,8 +2,10 @@
  * characters-api.js (src/services) — Cliente HTTP de la API de Rick and Morty (SRP).
  * -------------------------------------------------------------------
  * Responsabilidad ÚNICA: hablar con la red. NO toca el DOM ni conoce
- * favoritos ni sesiones. Devuelve datos "crudos" ya validados y deja
- * los errores como excepciones con mensaje amigable para la capa vista.
+ * favoritos ni sesiones. Devuelve datos ya validados y traducidos al
+ * español (ÚNICO punto de traducción del proyecto: la vista consume
+ * los datos tal cual) y deja los errores como excepciones con mensaje
+ * amigable para la capa vista.
  *
  * Requisitos del enunciado cubiertos aquí:
  *  - fetch con async/await (no .then encadenados).
@@ -23,8 +25,81 @@ import { API_BASE, API_TIMEOUT_MS, API_REINTENTOS, API_BACKOFF_MS } from '../con
 import { esperarTurno, esperar } from '../core/rate-limit.js';
 
 /* ----------------------------------------------------------------
- * Cancelación de peticiones en vuelo (abort al navegar fuera)
+ * Traducciones de Datos (Internationalization)
  * ---------------------------------------------------------------- */
+
+const DIC_TRADUCCIONES = {
+  status: {
+    Alive: 'Vivo',
+    Dead: 'Muerto',
+    // La API real manda "unknown" (minúscula); "Unknown" cubre datos legados.
+    unknown: 'Desconocido',
+    Unknown: 'Desconocido',
+  },
+  species: {
+    Human: 'Humano',
+    Alien: 'Alienígena',
+    Humanoid: 'Humanoide',
+    Robot: 'Robot',
+    unknown: 'Desconocido',
+    Unknown: 'Desconocido',
+    'Mythological Creature': 'Criatura Mitológica',
+    Poopybutthole: 'Poopybutthole',
+  },
+  gender: {
+    Female: 'Mujer',
+    Male: 'Hombre',
+    Genderless: 'Sin género',
+    unknown: 'Desconocido',
+    Unknown: 'Desconocido',
+  },
+  // Traducimos los nombres de ubicaciones comunes si fuera necesario,
+  // pero para nombres propios generales usamos una función de limpieza.
+};
+
+/**
+ * Traduce los campos clave de un personaje según el diccionario.
+ * ÚNICO punto de traducción del proyecto (la vista consume ya traducido).
+ * Es idempotente: volver a traducir un dato ya traducido no lo altera.
+ * @param {Object} personaje - Personaje crudo de la API.
+ * @returns {Object} Personaje con campos traducidos.
+ */
+export function traducirPersonaje(personaje) {
+  if (!personaje) return personaje;
+
+  // Traducción de ubicación (nested object)
+  let locationName = personaje.location?.name || 'Ubicación desconocida';
+
+  // Mapeo simple de algunas ubicaciones comunes para mejorar la coherencia
+  const locTraducciones = {
+    Earth: 'Tierra',
+    'Citadel of Ricks': 'Ciudadela de los Ricks',
+    'Cromulon Cluster': 'Cúmulo de Cromulon',
+    Unknown: 'Desconocido',
+  };
+
+  locationName = locTraducciones[locationName] || locationName;
+
+  return {
+    ...personaje,
+    status: DIC_TRADUCCIONES.status[personaje.status] || personaje.status,
+    species: DIC_TRADUCCIONES.species[personaje.species] || personaje.species,
+    gender: DIC_TRADUCCIONES.gender[personaje.gender] || personaje.gender,
+    location: {
+      ...personaje.location,
+      name: locationName,
+    },
+  };
+}
+
+/**
+ * Traduce una lista de personajes.
+ * @param {Array<Object>} lista - Lista cruda de la API.
+ * @returns {Array<Object>} Lista traducida.
+ */
+function traducirLista(lista) {
+  return Array.isArray(lista) ? lista.map(traducirPersonaje) : [];
+}
 
 /** Controladores activos: se abortan todos en pagehide. */
 const controladoresActivos = new Set();
@@ -149,8 +224,9 @@ async function pedirJson(ruta) {
  *     dentro de la pestaña; la versión de esquema invalida de golpe.
  * ---------------------------------------------------------------- */
 
-/** Versión del esquema de caché: cambiarla invalida todo lo previo. */
-const VERSION_ESQUEMA = 'v2';
+/** Versión del esquema de caché: cambiarla invalida todo lo previo.
+ *  v3: la entrada pasa de ser una LISTA a ser {info, results} (paginación). */
+const VERSION_ESQUEMA = 'v3';
 
 /** Prefijo de clave de caché por página (versionado). */
 const PREFIJO_CACHE = `cache_personajes_${VERSION_ESQUEMA}_p`;
@@ -162,9 +238,25 @@ const TTL_MS = 5 * 60 * 1000;
 const memoriaPaginas = new Map();
 
 /**
+ * Normaliza la respuesta de la API a {info, results} traduciendo resultados.
+ * @param {Object} datos - JSON crudo de /character.
+ * @returns {{info: Object, results: Array<Object>}}
+ */
+function aPagina(datos) {
+  const results = Array.isArray(datos?.results) ? traducirLista(datos.results) : [];
+  const infoCruda = datos?.info && typeof datos.info === 'object' ? datos.info : {};
+  const pages = Number(infoCruda.pages);
+  return {
+    // Sin info (respuesta inesperada) se asume una sola página.
+    info: { ...infoCruda, pages: Number.isFinite(pages) && pages > 0 ? pages : 1 },
+    results,
+  };
+}
+
+/**
  * Lee una página de SessionStorage si aún no venció su TTL.
  * @param {number} pagina - Nº de página (1 en adelante).
- * @returns {Array<Object>|null} Lista o null si no hay/venció.
+ * @returns {{info: Object, results: Array<Object>}|null} Página o null.
  */
 function leerCachePagina(pagina) {
   try {
@@ -175,7 +267,7 @@ function leerCachePagina(pagina) {
       sessionStorage.removeItem(`${PREFIJO_CACHE}${pagina}`);
       return null;
     }
-    return Array.isArray(d) ? d : null;
+    return d && Array.isArray(d.results) ? d : null;
   } catch {
     return null;
   }
@@ -184,7 +276,7 @@ function leerCachePagina(pagina) {
 /**
  * Escribe una página en ambas capas de caché.
  * @param {number} pagina - Nº de página.
- * @param {Array<Object>} datos - Lista a cachear.
+ * @param {{info: Object, results: Array<Object>}} datos - Página a cachear.
  * @returns {void}
  */
 function escribirCachePagina(pagina, datos) {
@@ -206,8 +298,8 @@ function escribirCachePagina(pagina, datos) {
 function revalidarEnFondo(pagina) {
   pedirUnaVez(`/character?page=${pagina}`)
     .then((datos) => {
-      const lista = Array.isArray(datos?.results) ? datos.results : [];
-      if (lista.length > 0) escribirCachePagina(pagina, lista);
+      const paginaDatos = aPagina(datos);
+      if (paginaDatos.results.length > 0) escribirCachePagina(pagina, paginaDatos);
     })
     .catch(() => {
       /* dato stale servido; el próximo intento de la UI reintentará */
@@ -223,7 +315,7 @@ function revalidarEnFondo(pagina) {
 export function buscarEnCache(id) {
   // 1) Memoria (más rápida).
   for (const { d } of memoriaPaginas.values()) {
-    const encontrado = (d || []).find((p) => String(p.id) === String(id));
+    const encontrado = (d?.results || []).find((p) => String(p.id) === String(id));
     if (encontrado) return encontrado;
   }
   // 2) SessionStorage.
@@ -235,7 +327,7 @@ export function buscarEnCache(id) {
       const { t, d } = JSON.parse(sessionStorage.getItem(clave) || '{}');
       if (Date.now() - t > TTL_MS) continue;
 
-      const encontrado = (d || []).find((p) => String(p.id) === String(id));
+      const encontrado = (d?.results || []).find((p) => String(p.id) === String(id));
       if (encontrado) return encontrado;
     }
   } catch {
@@ -244,40 +336,49 @@ export function buscarEnCache(id) {
   return null;
 }
 
-/**
- * Vacía toda la caché de personajes (memoria + SessionStorage).
- * @returns {void}
- */
-export function limpiarCachePersonajes() {
-  memoriaPaginas.clear();
-  try {
-    const claves = [];
-    for (let i = 0; i < sessionStorage.length; i++) {
-      const clave = sessionStorage.key(i);
-      if (clave?.startsWith(PREFIJO_CACHE)) claves.push(clave);
-    }
-    claves.forEach((c) => sessionStorage.removeItem(c));
-  } catch {
-    /* sin storage no hay nada que limpiar */
-  }
-}
-
 /* ----------------------------------------------------------------
  * Endpoints públicos
  * ---------------------------------------------------------------- */
 
 /**
- * Obtiene una página de personajes (20 registros por página).
- * Estrategia: memoria fresca → stale+revalidate → sessionStorage → red.
+ * Obtiene una página con su metadata de paginación ({info, results}).
+ * Sin filtros => caché SWR por página; con filtros => endpoint combinado
+ * (sin caché). Todos los caminos pasan por rate-limit + timeout +
+ * reintentos y conservan `error.status` en fallos reales.
  * @param {number} [pagina=1] - Nº de página (1 en adelante).
- * @returns {Promise<Array<Object>>} Lista de personajes.
+ * @param {{nombre?: string, estado?: string, especie?: string}} [filtros]
+ * @returns {Promise<{info: Object, results: Array<Object>}>} Página traducida.
+ * @throws {Error} Con `.status` HTTP si la API falla de verdad.
  */
-export async function obtenerPersonajes(pagina = 1) {
+export async function obtenerPagina(pagina = 1, filtros = {}) {
+  const nombre = String(filtros.nombre || '').trim();
+  const estado = String(filtros.estado || '');
+  const especie = String(filtros.especie || '');
+
+  /* ---- Con filtros: endpoint combinado (URLSearchParams = query segura) ---- */
+  if (nombre || estado || especie) {
+    const parametros = new URLSearchParams();
+    // name/status/species: valores exactos que espera la API (case-insensitive).
+    if (nombre) parametros.set('name', nombre);
+    if (estado) parametros.set('status', estado);
+    if (especie) parametros.set('species', especie);
+    parametros.set('page', String(pagina));
+
+    try {
+      return aPagina(await pedirJson(`/character?${parametros.toString()}`));
+    } catch (error) {
+      // 404 = "sin coincidencias" (resultado vacío, no un fallo de sistema).
+      if (error.status === 404) {
+        return { info: { pages: 1, count: 0, next: null, prev: null }, results: [] };
+      }
+      throw error;
+    }
+  }
+
+  /* ---- Sin filtros: caché stale-while-revalidate por página ---- */
   // 1) Memoria fresca => cero latencia.
   const enMemoria = memoriaPaginas.get(pagina);
-  if (enMemoria && Date.now() - enMemoria.t <= TTL_MS) {
-    return enMemoria.d;
-  }
+  if (enMemoria && Date.now() - enMemoria.t <= TTL_MS) return enMemoria.d;
 
   // 2) Memoria stale => se SIRVE YA y se revalida en segundo plano.
   if (enMemoria) {
@@ -292,13 +393,10 @@ export async function obtenerPersonajes(pagina = 1) {
     return enStorage;
   }
 
-  // 4) Red (con rate limit + reintentos).
-  // `?page=N` es el formato de paginación de la API (requisito opcional).
-  const datos = await pedirJson(`/character?page=${pagina}`);
-  const lista = Array.isArray(datos?.results) ? datos.results : [];
-
-  escribirCachePagina(pagina, lista);
-  return lista;
+  // 4) Red (con rate limit + reintentos + timeout).
+  const paginaDatos = aPagina(await pedirJson(`/character?page=${pagina}`));
+  escribirCachePagina(pagina, paginaDatos);
+  return paginaDatos;
 }
 
 /**
@@ -321,35 +419,6 @@ export async function obtenerPersonaje(id) {
   if (desdeCache) return desdeCache;
 
   // 2) Red
-  return pedirJson(`/character/${idLimpio}`);
-}
-
-/**
- * Busca personajes con los filtros del endpoint /character (Fase 3).
- * Acepta name + status + species combinados (la API los soporta en la
- * misma query). Los 404 de la API son "sin resultados", no un error de
- * sistema. Los resultados filtrados NO se cachean por página (las claves
- * de caché son para el catálogo sin filtros).
- * @param {{nombre?: string, estado?: string, especie?: string,
- *          pagina?: number}} [filtros]
- * @returns {Promise<Array<Object>>} Coincidencias (vacío si no hay).
- */
-export async function buscarPersonajes({ nombre = '', estado = '', especie = '', pagina } = {}) {
-  const parametros = new URLSearchParams();
-  if (nombre.trim()) parametros.set('name', nombre.trim());
-  // Valores exactos que espera la API: alive|dead|unknown (insensible a mayúsculas).
-  if (estado) parametros.set('status', estado);
-  if (especie) parametros.set('species', especie);
-  if (pagina) parametros.set('page', String(pagina));
-
-  const query = parametros.toString();
-  try {
-    const datos = await pedirJson(`/character${query ? `?${query}` : ''}`);
-    return Array.isArray(datos?.results) ? datos.results : [];
-  } catch (error) {
-    // La API responde 404 con { error: "There is nothing here" } cuando
-    // no hay coincidencias: es un resultado vacío, no un fallo de sistema.
-    if (error.status === 404) return [];
-    throw error;
-  }
+  const personajeCrudo = await pedirJson(`/character/${idLimpio}`);
+  return traducirPersonaje(personajeCrudo);
 }

@@ -12,9 +12,9 @@
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://rickandmortyapi.com data:; connect-src https://rickandmortyapi.com; object-src 'none'; base-uri 'self'; form-action 'self'"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://rickandmortyapi.com data:; connect-src 'self' https://rickandmortyapi.com; object-src 'none'; base-uri 'self'; form-action 'self'"
     />
-    <title>Catálogo Interdimensional · Web-Manual</title>
+    <title>Catálogo Interdimensional · Catalogo interdimensional</title>
     <!-- ============ SEO por página (Fase 6 / T6.1) ============ -->
     <meta
       name="description"
@@ -26,16 +26,16 @@
     <meta name="theme-color" id="meta-theme-color" content="#0b0c10" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Web-Manual" />
+    <meta property="og:site_name" content="Catálogo interdimensional" />
     <meta property="og:locale" content="es_ES" />
-    <meta property="og:title" content="Catálogo Interdimensional · Web-Manual" />
+    <meta property="og:title" content="Catálogo Interdimensional" />
     <meta
       property="og:description"
       content="Personajes de todo el multiverso: busca, filtra y guarda favoritos."
     />
     <meta property="og:url" content="./index.html" />
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Catálogo Interdimensional · Web-Manual" />
+    <meta name="twitter:title" content="Catálogo Interdimensional" />
     <meta
       name="twitter:description"
       content="Personajes de todo el multiverso: busca, filtra y guarda favoritos."
@@ -45,7 +45,7 @@
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        "name": "Web-Manual",
+        "name": "Catálogo interdimensional",
         "description": "Catálogo interdimensional de personajes de Rick and Morty.",
         "inLanguage": "es",
         "potentialAction": {
@@ -70,6 +70,17 @@
       }
       body {
         margin: 0;
+      }
+      /* Botón de subir scroll */
+      .btn-subir {
+        transition:
+          opacity 0.3s,
+          transform 0.3s;
+        transform: translateY(20px);
+      }
+      .btn-subir.visible {
+        opacity: 1;
+        transform: translateY(0);
       }
     </style>
 
@@ -99,7 +110,7 @@
     <!-- Rendimiento: el navegador abre conexión temprano con la API -->
     <link rel="preconnect" href="https://rickandmortyapi.com" />
   </head>
-  <body>
+  <body class="con-lienzo">
     <!-- ============================================================
          HEADER: inyectado por src/ui/header.js (nav + tema + sesión).
          El punto de montaje es anterior al <main> => se inserta ahí.
@@ -108,7 +119,29 @@
     <!-- ============================================================
          MAIN: catálogo de personajes
          ============================================================ -->
-    <main id="contenido" class="min-h-screen">
+    <main id="contenido" class="min-h-screen relative">
+      <!-- Botón Subir al Inicio -->
+      <button
+        id="btn-subir-inicio"
+        class="btn-subir fixed bottom-6 right-6 z-40 btn btn-ghost p-3 rounded-full opacity-0 pointer-events-none"
+        aria-label="Subir al inicio"
+      >
+        <svg
+          class="w-6 h-6"
+          aria-hidden="true"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M5 10l7-7m0 0l7 7m-7-7v18"
+          ></path>
+        </svg>
+      </button>
       <!-- ============================================================
            HERO (T3.2): texto real + glitch CRT.
            ============================================================ -->
@@ -139,7 +172,7 @@
               type="search"
               id="buscar"
               name="buscar"
-              placeholder="> grep -i nombre..."
+              placeholder="> grep -i nombre... "
               autocomplete="off"
               class="campo w-full"
             />
@@ -203,13 +236,17 @@
         -->
         <div id="zona-catalogo"></div>
 
-        <!-- ---------- Paginación: cargar 20 personajes más ---------- -->
-        <div id="contenedor-cargar-mas" class="hidden pt-8 text-center">
-          <button type="button" id="btn-cargar-mas" class="btn btn-primary">Cargar más</button>
+        <!-- ---------- Paginación: navegación entre páginas ---------- -->
+        <div id="contenedor-paginacion" class="hidden pt-8 flex flex-col items-center gap-4">
+          <div id="paginacion-controles" class="flex flex-wrap justify-center gap-2">
+            <!-- Botones inyectados por JS -->
+          </div>
+          <p id="paginacion-info" class="microcopy text-dim"></p>
         </div>
       </section>
     </main>
 
+    <script type="module" src="./src/controllers/background-init.js"></script>
     <script type="module" src="./src/services/theme-toggle.js"></script>
     <script type="module" src="./src/controllers/catalog.js"></script>
   </body>
