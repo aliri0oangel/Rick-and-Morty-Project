@@ -344,6 +344,34 @@ Cambios pedidos por el usuario tras la primera entrega (bloque original retirado
 
 ---
 
+### Fase 12 — Pulido de estados e interacción (Empty · Loading · Hover) — ✅ CERRADA
+
+Pedida por el usuario tras las fases 1–11: empty states, loading states y hover states dinámicos con toque más profesional. Decisiones confirmadas: portal glow que sigue al cursor · loading en los 3 formularios (login/registro/cuenta) · empty states con CTA contextual. Restricciones heredadas intactas (M1: sin lift/borde remarcado fuera de cards; reduced-motion; tokens semánticos; ambos temas).
+
+- `T12.1` ✅ **CERRADO** — **Empty states con CTA + firma CRT:** `crearEstadoVacio` acepta `acciones: [{texto, variante?, alClic}]` (botones `.btn`, variante por defecto `btn-primary`, callbacks inyectados = DIP; texto con `textContent`); ilustración con flicker de tubo CRT (`.estado-vacio-ilustr` + keyframes `tubo-flicker` bajo `no-preference`, opacidad base = utility `opacity-70`). Catálogo sin resultados → **"Limpiar búsqueda y filtros"** (reset extraído a `limpiarFiltros()`, DRY con `#btn-limpiar`); API que devuelve vacío → **"Reintentar"**; favoritos vacío → **"Explorar catálogo"** (navega con View Transitions). `page-states.js` propaga `acciones` vía `extras` (contrato intacto).
+- `T12.2` ✅ **CERRADO** — **Loading states:** helpers `ponerBotonCargando(boton, texto)` / `quitarBotonCargando(boton)` en `components.js` (spinner `icon-loader` + texto contextual, `aria-busy`, `disabled` anti doble envío, **ancho congelado** vía `minWidth` = sin saltos de layout, idempotentes, JSDoc). Aplicados en `login.js` ("Conectando portal…", se queda cargando hasta la redirección; restaurado en catch), `register.js` ("Abriendo portal…"; restaurado en `marcarFallo` = todo camino de error) y `account.js` ("Guardando…"; try/catch sobre `actualizarUsuario` + cooldown de éxito 1200ms con el botón en modo carga). Skeletons orgánicos: `crearSkeletonCard(indice)` fija `--skeleton-delay` y `.skeleton` lo lee en `animation-delay` (shimmer desfasado por lote); el contenedor de imagen de la card usa `.skeleton rounded-none` como placeholder mientras carga y la clase se RETIRA en `load`/`error` (imprescindible: sin el retiro el shimmer quedaba animándose para siempre en cada card cargada — ver «Correcciones de estabilidad» más abajo).
+- `T12.3` ✅ **CERRADO** — **Hover dinámico "portal glow":** **fix del bug `group`** (faltaba en el `<article>` de `crearCardPersonaje`: el zoom `group-hover:scale-105` de la imagen nunca se había disparado). Capa `.tubo-card-portal` (radial-gradient ámbar vía `color-mix`, 16%) cuyo centro sigue al cursor por `--mx/--my`, escritas por UN listener delegado por grid con throttle rAF (`montarSeguimientoCursor()` en `characters.js`, montado en catálogo y favoritos; no-op en táctil/reduced-motion vía matchMedia). Cue "abrir expediente ›" (`.tubo-card-cue`, microcopy `aria-hidden`) que aparece en hover/focus-within; paridad `:focus-within` en cards (mismo borde+glow que hover, sin lift para no mover el foco de teclado).
+- `T12.4` ✅ **CERRADO** — **Coherencia hover secundaria:** `.btn-ghost:hover` gana tinte de fondo `color-mix(brand 10%)` (coherente con `.btn-icono`/menú cuenta; M1 intacto: el borde sigue quieto); enlaces de texto del nav + logo con `.enlace-nav` (barrido de subrayado `scaleX(0→1)` en hover/focus-visible sobre `--brand`).
+- `T12.5` ✅ **CERRADO** — **QA:** 6 tests E2E nuevos × 3 viewports (bloque «estados de carga y vacíos (Fase 12)» en `e2e.spec.js`): aria-busy+disabled del registro hasta redirigir · restauración del botón de login tras fallo y reintento exitoso · CTA "Explorar catálogo" que navega desde favoritos vacío · CTA "Limpiar búsqueda y filtros" que resetea la barra y recupera la lista (mock 404) · `group` + cue + capa portal en la card · cooldown de "Guardar" en Mi cuenta (deshabilitado → restaurado). **Presupuesto JS 65 → 68 KB** (HEAD venía al límite: 64.9/65; la Fase 12 suma +3.0 KB gzip de peso FUNCIONAL medido) con justificación en la cabecera de `audit-budgets.mjs`. `playwright.config.js` ahora es sensible a `PORT` (la suite puede desviarse del :4173 cuando lo ocupa un `pnpm dev` activo; `reuseExistingServer` sigue en `false` por diseño anti-flaky).
+
+✅ **Aceptación:** lint · format · check:imports · check:contrast (34/34) · build · budgets (CSS 8.3/20 KB · JS 67.9/68 KB) · **suite completa 117/117 en 17.4 min** (3 viewports × 39 tests; 6 tests nuevos de la Fase 12 incluidos; ver «Correcciones de estabilidad»).
+
+---
+
+### Correcciones de estabilidad — suite E2E en máquina justa (2026-10-31)
+
+La primera ejecución completa de la Fase 12 devolvió **33 fallos / 84 pasados en 45 min** (vs ~12 min esperados). El análisis (traces + error-contexts + medición de CPU en vivo) destapó TRES causas raíz —dos de ellas introducidas por la propia fase— más 2 tests poco deterministas:
+
+- **Shimmer infinito en cards cargadas (regresión de T12.2) ✓** — `crearCardPersonaje` dejaba `.skeleton` en el contenedor de imagen de forma PERMANENTE: el shimmer (animación de `background-position`) corría para siempre en cada card ya cargada (repintado constante × N cards = CPU quemada). Corregido retirando la clase en `load`/`error` (y de inmediato si `img.complete`), mismo patrón que `.img-fade`.
+- **Bucle de rebuild cruzado entre watchers de Tailwind ✓** — `dist/app.css` se versiona (excluido de `.gitignore`) y era "fuente" de detección de Tailwind; con DOS watchers vivos (el `pnpm dev` del usuario + el que spawnea la suite Playwright), cada uno veía la escritura del otro como cambio de fuente y reconstruía en bucle perpetuo (los "Done in Xs" del log; CPU saturada durante toda la suite). Corregido en dos capas: `@source not '../dist'` en `app.css` (excluye el build de la detección de TODOS los watchers) y `NO_WATCH=1` en el `webServer` de Playwright (`dev.mjs` ya no spawnea el watcher en tests; `test:e2e`/`test:a11y`/`test:responsive` ejecutan `pnpm build` antes).
+- **Paralelismo excesivo para la máquina ✓** — con 2 workers, los Chromium se repartían 4 hilos (Celeron N5095) compartidos con el navegador de escritorio: tests que pasaban solos fallaban en paralelo (fetches que nunca completaban, timeouts en cadena, "Tearing down context exceeded"). `playwright.config.js` fija `workers: 1` por defecto (override vía `PW_WORKERS` en CI). Verificación: el bloque Fase 12 + flujo principal pasó de 4/8 (paralelo) a **7/7 en 1.8 min** (serial); el test de registro bajó de 46 s a 3.8 s.
+- **2 tests nuevos poco deterministas ✓** — el test de registro usaba `page.click` (Playwright espera la navegación que dispara el submit → al resolver, el botón ya no existe); ahora usa un clic ATÓMICO vía `evaluate` (clic + lectura de `aria-busy`/`disabled` en la MISMA tarea). El cooldown de "Guardar" asertaba una ventana transient de 1200 ms con polling externo; ahora un `MutationObserver` en la página captura el estado de carga en el mismo tick de microtareas (determinista bajo cualquier carga).
+- **`playwright.config.js` sensible a `PORT`** (heredado de esta fase): la suite puede desviarse del :4173 cuando lo ocupa un `pnpm dev` activo (`$env:PORT='4180'; pnpm test:e2e`); `reuseExistingServer` sigue en `false` por diseño anti-flaky.
+
+✅ **Resultado tras las correcciones: `pnpm test:e2e` 117/117 en 17.4 min** (serial, 0 reintentos, 0 timeouts) — frente a los 33 fallos / 45 min de la primera ejecución.
+
+---
+
 ## 7. Características faltantes evaluadas (UX/UI/tech con temática R&M)
 
 | Categoría | Característica                                                | Fase         |
@@ -479,6 +507,7 @@ Fase 0 (tooling) ──▶ Fase 1 (tokens + dirección visual) ──▶ Fase 2 
 | Fases 8–9                           | ✅ Completada | Ver detalle abajo                                                              |
 | Fase 10 (T10.1–T10.2, T10.4)        | ✅ Completada | README.md creado; tests del enunciado verdes                                   |
 | Fase 11 (M1–M6 modificaciones)      | ✅ Completada | Nav sticky/glass + dropdown "Mi cuenta"; suite ahora **81/81**                 |
+| Fase 12 (Empty · Loading · Hover)   | ✅ CERRADA    | CTA en empty states, carga en botones, portal glow + fix `group`; ver detalle  |
 | T10.3 (review final de checklists)  | ✅ Completada | Las 4 checklists aprobadas sin hallazgos (ver «Detalle T10.3»)                 |
 | Verificación final del gate         | ✅ Completada | lint · format · imports · contrast · build · budgets · suite **81/81** · smoke |
 

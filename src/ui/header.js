@@ -63,7 +63,7 @@ export function montarHeader({ sesion = null, activo = null } = {}) {
       <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center gap-3">
         <!-- M4: el logo puede encoger y truncarse en pantallas estrechas
              (los controles son shrink-0 => sin overflow horizontal). -->
-        <a href="${RUTAS.index}" class="font-display text-base md:text-xl text-brand shrink min-w-0 truncate"
+        <a href="${RUTAS.index}" class="enlace-nav font-display text-base md:text-xl text-brand shrink min-w-0 truncate"
            title="Catálogo de Personajes" data-nav="marca">
           Catálogo de Personajes
         </a>
@@ -75,7 +75,7 @@ export function montarHeader({ sesion = null, activo = null } = {}) {
               (enlace) => `
               <li>
                 <a href="${enlace.href}" data-nav="${enlace.id}"
-                   class="text-dim hover:text-brand transition-colors px-1 py-1.5">${enlace.etiqueta}</a>
+                   class="enlace-nav text-dim hover:text-brand transition-colors px-1 py-1.5">${enlace.etiqueta}</a>
               </li>`
             ).join('')}
           </ul>

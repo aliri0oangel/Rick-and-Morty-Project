@@ -1,5 +1,10 @@
 import { registrarUser, rutaPublica, RUTAS } from '../services/auth.js';
-import { crearControlPassword, mostrarToast } from '../ui/components.js';
+import {
+  crearControlPassword,
+  mostrarToast,
+  ponerBotonCargando,
+  quitarBotonCargando,
+} from '../ui/components.js';
 import { inicializarMallaCuantica } from '../ui/interactive-mesh.js';
 import {
   validarCampo,
@@ -101,6 +106,10 @@ document.addEventListener('DOMContentLoaded', () => {
      * @returns {void}
      */
     const marcarFallo = ({ campo, mensaje } = {}) => {
+      // T12.2: todo fallo restaura el botón (cualquier camino de error
+      // pasa por aquí: negocio y excepción inesperada).
+      quitarBotonCargando(btnRegister);
+
       if (campo && mensaje && document.getElementById(`error-${campo}`)) {
         mostrarErrores({ error: true, campo, mensaje });
       }
@@ -125,6 +134,10 @@ document.addEventListener('DOMContentLoaded', () => {
         hudEstado.className = 'text-brand font-semibold';
       }
 
+      // T12.2: spinner + aria-busy mientras se registra (restaurado en
+      // marcarFallo si falla; en el éxito queda hasta la redirección).
+      ponerBotonCargando(btnRegister, 'Abriendo portal...');
+
       const userRegistrado = await registrarUser(datos);
 
       if (!userRegistrado.exito) {
@@ -137,8 +150,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       form_registro.reset();
-      btnRegister.disabled = true;
-      btnRegister.classList.add('opacity-50', 'cursor-not-allowed');
+      // El botón conserva el estado de carga durante la pausa de redirect
+      // (T12.2): disabled + spinner ya vienen de ponerBotonCargando.
       mensajeExito.classList.remove('hidden');
 
       if (hudEstado) {

@@ -50,6 +50,17 @@ const PARES = [
   // ---- No textuales pero críticos (bordes/foco): 3:1 ----
   ['día · brand sobre bg (borde/foco)', '#8f5a00', '#f4efe6', UMBRAL_GRANDE],
   ['CRT · brand sobre bg (borde/foco)', '#ffb000', '#0b0c10', UMBRAL_GRANDE],
+
+  // ---- Glassmorphism suave (glass-card: formularios de acceso) ----
+  // Fondo real del texto = glass-fill (panel 62%) compuesto sobre bg.
+  // Composites: día #fffdf8 62% + #f4efe6 38% = #fbf8f1 ·
+  //             CRT #12141a 62% + #0b0c10 38% = #0f1116 (peor caso = sobre bg).
+  ['día · ink sobre glass (login)', '#2a2418', '#fbf8f1', UMBRAL_NORMAL],
+  ['día · dim sobre glass (login)', '#6f6455', '#fbf8f1', UMBRAL_NORMAL],
+  ['día · brand sobre glass (login)', '#8f5a00', '#fbf8f1', UMBRAL_NORMAL],
+  ['CRT · ink sobre glass (login)', '#ffd9a0', '#0f1116', UMBRAL_NORMAL],
+  ['CRT · dim sobre glass (login)', '#9b8b74', '#0f1116', UMBRAL_NORMAL],
+  ['CRT · brand sobre glass (login)', '#ffb000', '#0f1116', UMBRAL_NORMAL],
 ];
 
 /** Luminancia relativa WCAG 2.1 (sRGB gamma-correcta). */

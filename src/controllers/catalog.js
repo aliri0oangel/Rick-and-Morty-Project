@@ -21,6 +21,7 @@ import { obtenerPagina } from '../services/characters-api.js';
 import {
   renderizarPersonajes,
   montarGridDelegacion,
+  montarSeguimientoCursor,
   pintarBotonFavorito,
   ordenarPersonajes,
 } from '../ui/characters.js';
@@ -285,7 +286,16 @@ document.addEventListener('DOMContentLoaded', () => {
           hayTexto
             ? `No hay personajes que coincidan con "${filtros.nombre}".`
             : 'La API no devolvió personajes. Intenta de nuevo más tarde.',
-          { ilustracion: 'busqueda' }
+          {
+            ilustracion: 'busqueda',
+            // T12.1: CTA contextual — la salida más directa de cada vacío
+            // (limpiar filtros si buscaba; reintentar si la API vino vacía).
+            acciones: [
+              hayTexto
+                ? { texto: 'Limpiar búsqueda y filtros', alClic: limpiarFiltros }
+                : { texto: 'Reintentar', alClic: () => cargar({ reemplazar: true }) },
+            ],
+          }
         );
         return;
       }
@@ -367,8 +377,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Cambio de orden => solo re-pinta la lista YA cargada (sin red).
   selOrden?.addEventListener('change', pintarGrid);
 
-  // "Limpiar todo" => resets de la barra + vuelta al catálogo completo.
-  btnLimpiar?.addEventListener('click', () => {
+  /**
+   * Limpia la barra de herramientas y recarga el catálogo completo.
+   * T12.1: extraído del listener de #btn-limpiar para REUTILIZARSE
+   * desde el CTA del estado vacío "Sin resultados" (misma acción, un
+   * solo camino => DRY).
+   * @returns {void}
+   */
+  const limpiarFiltros = () => {
     clearTimeout(relojBusqueda);
     if (inputBuscar) inputBuscar.value = '';
     if (selEstado) selEstado.value = '';
@@ -376,7 +392,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (selOrden) selOrden.value = 'api';
     actualizarBotonLimpiar();
     cargar({ reemplazar: true });
-  });
+  };
+
+  // "Limpiar todo" => resets de la barra + vuelta al catálogo completo.
+  btnLimpiar?.addEventListener('click', limpiarFiltros);
 
   /* ==============================================================
    * 3) EVENTOS DE LA GRID (delegación compartida con favorites)
@@ -410,6 +429,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ---------------- Arranque ---------------- */
+  // Portal glow dinámico (T12.3): seguimiento de cursor delegado en la grid.
+  montarSeguimientoCursor(zona.grid);
   actualizarBotonLimpiar();
   cargar({ reemplazar: true });
   montarFooter(document.getElementById('contenido'));

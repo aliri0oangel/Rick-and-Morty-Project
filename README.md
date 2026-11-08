@@ -15,13 +15,14 @@ Aplicación **HTML + CSS + JS + Tailwind v4** (sin frameworks) con estética "Di
 | ------------------------------ | ------------------------------------------------------------ |
 | `pnpm dev`                     | Servidor en :4173 + watch de Tailwind + livereload (SSE)     |
 | `pnpm build`                   | Compila `src/styles/app.css` → `dist/app.css` minificado     |
+| `pnpm build:deploy`            | Build + ensambla `public/` lista para Netlify (Drop)         |
 | `pnpm watch`                   | Solo watch del build (sin servidor)                          |
 | `pnpm lint`                    | ESLint (flat config)                                         |
 | `pnpm format` / `format:check` | Prettier escribe / verifica                                  |
 | `pnpm check:imports`           | Valida imports relativos de todos los módulos `src/`         |
 | `pnpm check:contrast`          | 28 pares token↔fondo AA (WCAG)                               |
-| `pnpm audit:budgets`           | Presupuestos: CSS < 20KB gzip · JS < 65KB gzip               |
-| `pnpm test:e2e`                | Playwright: E2E + axe + responsive (3 viewports)             |
+| `pnpm audit:budgets`           | Presupuestos: CSS < 20KB gzip · JS < 68KB gzip               |
+| `pnpm test:e2e`                | Playwright: build + E2E + axe + responsive (3 viewports)     |
 | `pnpm test:a11y`               | Solo axe-core (6 páginas × 2 temas, cero violaciones graves) |
 | `pnpm test:responsive`         | Solo spot-checks responsive (375 / 768 / 1280)               |
 | `pnpm audit:lighthouse`        | Lighthouse (requiere `pnpm dev` corriendo y red para npx)    |
@@ -55,6 +56,26 @@ Aplicación **HTML + CSS + JS + Tailwind v4** (sin frameworks) con estética "Di
 > `dist/app.css` se versiona para el despliegue estático. Tras cambiar estilos,
 > ejecuta `pnpm build` y commitea el CSS generado.
 
+## Despliegue en Netlify
+
+La app es 100% estática, pero **no se publica la raíz del repo** (contiene
+`node_modules`, tests y docs): se publica el artefacto `public/`, que solo
+incluye los ficheros de runtime (HTML, `src/`, `dist/app.css`, assets y
+`_headers`).
+
+1. `pnpm build:deploy` → compila Tailwind y ensambla `public/`.
+2. Arrastra la carpeta **`public/`** a [app.netlify.com/drop](https://app.netlify.com/drop).
+3. (Opcional, CI desde Git) Conecta el repo: `netlify.toml` ya fija
+   `command = "pnpm build:deploy"`, `publish = "public"` y `NODE_VERSION = 24`.
+
+Notas:
+
+- `public/` es un artefacto regenerable: está en `.gitignore` (como `dist/`).
+- `_headers` añade la CSP con `frame-ancestors 'none'` (que los `<meta>` no
+  pueden llevar), `X-Frame-Options`, `X-Content-Type-Options` y `Referrer-Policy`.
+- Tras el primer deploy, sustituye `web-manual.example.com` en `robots.txt` y
+  `sitemap.xml` por el dominio real y regenera el sitemap.
+
 ## Decisiones arquitectónicas (resumen)
 
 1. **Capas SOLID en vanilla JS:** `core` (mecanismos puros) → `services` (reglas de negocio) → `domain` (validación/mapeo) → `ui` (render puro, fábricas sin estado) → `controllers` (orquestación por página con dependencias inyectadas: `initCatalog({ api, favorites, ui })`).
@@ -69,6 +90,7 @@ Aplicación **HTML + CSS + JS + Tailwind v4** (sin frameworks) con estética "Di
 10. **Nav adaptativa sin hamburguesa (M4):** ≥768px enlaces de texto (estilo original); <768px cuatro controles redondos de 44px (Catálogo, Favoritos, Tema, Cuenta). El botón «Mi cuenta» abre un dropdown —en todos los tamaños— con «Mi cuenta» y «Cerrar sesión». Logo visible: **«Catálogo de Personajes»**.
 11. **Medidor de fuerza de contraseña (M2):** solo donde se crea o cambia la clave (registro y «Nueva contraseña» de Mi cuenta); en login y en los campos de confirmación sería incoherente.
 12. **Sin microcopy `//` decorativo (M5):** se eliminaron los textos de anotación tipo `// portal-7…`; la clase `microcopy` sigue siendo la etiqueta estilizada de los `dt` del detalle y otros textos funcionales.
+13. **Estados de interacción con callback inyectado (Fase 12):** los empty states aceptan CTA (`crearEstadoVacio({ acciones })`) y los botones de envío tienen modo carga (`ponerBotonCargando`/`quitarBotonCargando`: spinner + `aria-busy` + ancho congelado). El hover dinámico de las cards (portal glow que sigue al cursor) vive en UN listener delegado por grid con throttle rAF y se desactiva en táctil/reduced-motion; el glow y el cue solo existen bajo `@media (hover:hover) and (prefers-reduced-motion:no-preference)`.
 
 ## Cómo añadir un componente
 
@@ -90,7 +112,7 @@ Aplicación **HTML + CSS + JS + Tailwind v4** (sin frameworks) con estética "Di
 
 ## QA / verificación
 
-- **Gate automático:** `pnpm lint` · `format` · `check:imports` · `check:contrast` · `build` · `audit:budgets` · `pnpm test:e2e` (E2E core + axe 0 violaciones graves + overflow/header sticky/medidor M2/hueco M6 en 375/768/1280 — **99 tests**).
+- **Gate automático:** `pnpm lint` · `format` · `check:imports` · `check:contrast` · `build` · `audit:budgets` · `pnpm test:e2e` (build + E2E core + axe 0 violaciones graves + overflow/header sticky/medidor M2/hueco M6 en 375/768/1280 — **117 tests**, 1 worker por defecto; `PW_WORKERS` lo amplía en CI y `PORT` desvía el servidor si :4173 está ocupado).
 - **Matriz responsive completa (manual/CI):** 12 resoluciones × 6 páginas × 2 temas = 144 celdas (`PLAN.md` §10.2). El runner automatiza las 3 resoluciones críticas; el resto se amplía en `playwright.config.js` (`projects`).
-- **Lighthouse (manual):** `pnpm dev` + `pnpm audit:lighthouse` → presupuestos de `PLAN.md` §10.1 (Performance ≥ 90, JS < 65KB gzip…).
+- **Lighthouse (manual):** `pnpm dev` + `pnpm audit:lighthouse` → presupuestos de `PLAN.md` §10.1 (Performance ≥ 90, JS < 68KB gzip…).
 - **API real (manual):** los tests mockean la API; el comportamiento real (rate-limit, 429, caché) se revisa con `pnpm dev` navegando el catálogo.

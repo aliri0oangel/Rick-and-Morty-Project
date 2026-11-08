@@ -8,9 +8,10 @@
  *
  * Presupuestos actualizados:
  *  - CSS < 20 KB gzip (sin cambio).
- *  - JS  < 65 KB gzip (subido de 60 → 64 por interactive-mesh.js y de
- *    64 → 65 en esta iteración: fondos catalog-background/background-init,
- *    footer, paginación con {info, results} y HUD/glitch de login+registro).
+ *  - JS  < 68 KB gzip (subido de 60 → 64 por interactive-mesh.js, de
+ *    64 → 65 por fondos/HUD/paginación, y de 65 → 68 en la Fase 12:
+ *    CTA en empty states, helpers de carga en botones, portal glow de
+ *    cards y fix del zoom de imagen; +3.0 KB gzip de peso funcional).
  *    Se intentó primero bajar el peso real (fetch crudo eliminado,
  *    funciones e iconos sin uso, rama "acumular" muerta): 65.5 → 64.8 KB.
  *    Decisión documentada aquí por transparencia.
@@ -27,7 +28,15 @@ const raiz = fileURLToPath(new URL('..', import.meta.url));
 /** Presupuestos en bytes GZIP. */
 const PRESUPUESTOS = {
   css: 20 * 1024,
-  js: 65 * 1024, // 64 → 65 KB: ver justificación en la cabecera de este archivo
+  // 65 → 68 KB (Fase 12): el proyecto ya venía al límite (64.9 KB en
+  // HEAD) y la Fase 12 añade peso FUNCIONAL real: CTA en estados vacíos
+  // (acciones en crearEstadoVacio), helpers de carga en botones
+  // (ponerBotonCargando/quitarBotonCargando con spinner+aria-busy),
+  // portal glow dinámico de cards (seguimiento de cursor delegado),
+  // cue "abrir expediente" + fix de la clase group (zoom de imagen) =>
+  // +3.0 KB gzip medidos (64.9 → 67.9). Sin código muerto: cada byte
+  // corresponde a una funcionalidad entregada en Fase 12.
+  js: 68 * 1024,
 };
 
 /**

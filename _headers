@@ -1,0 +1,18 @@
+# Cabeceras HTTP — Web-Manual (despliegue en Netlify)
+# Netlify procesa este fichero cuando está en el directorio publicado (tanto
+# en deploys manuales/Drop como en CI con netlify.toml).
+#
+# frame-ancestors SOLO funciona por cabecera HTTP (los <meta> lo ignoran),
+# de ahí que este fichero exista: impide que el sitio se embeb iframes ajenos.
+#
+# La CSP es idéntica a la de los <meta> de las páginas, con una salvedad:
+# aquí connect-src incluye 'self' (versión de index.html). En las 6 páginas
+# cuya meta-CSP omite 'self', la política efectiva es la intersección de ambas
+# (es decir, solo la API externa) = comportamiento actual, sin cambios: la app
+# únicamente hace fetch a rickandmortyapi.com.
+
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://rickandmortyapi.com data:; connect-src 'self' https://rickandmortyapi.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

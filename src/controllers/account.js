@@ -22,7 +22,13 @@ import {
   limpiarCampos,
 } from '../domain/validators.js';
 import { migrarFavoritos, obtenerFavoritos } from '../services/favorites-repository.js';
-import { crearCampo, crearControlPassword, mostrarToast } from '../ui/components.js';
+import {
+  crearCampo,
+  crearControlPassword,
+  mostrarToast,
+  ponerBotonCargando,
+  quitarBotonCargando,
+} from '../ui/components.js';
 import { montarHeader } from '../ui/header.js';
 
 /** Definición declarativa de los campos (fuente única: HTML y aria). */
@@ -227,9 +233,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* --- 3) Persistencia vía auth.js (SRP: aquí no se toca el storage) --- */
-    const resultado = await actualizarUsuario(usuarioId, cambios);
+    // T12.2: spinner + aria-busy mientras se persiste; cualquier fallo
+    // (excepción incluida) restaura el botón para reintentar.
+    ponerBotonCargando(btnGuardar, 'Guardando...');
+    let resultado;
+    try {
+      resultado = await actualizarUsuario(usuarioId, cambios);
+    } catch (error) {
+      console.error('[cuenta] Error inesperado al guardar:', error);
+      quitarBotonCargando(btnGuardar);
+      mostrarErrorGeneral('No se pudieron guardar los cambios. Intenta de nuevo.');
+      return;
+    }
 
     if (!resultado.exito) {
+      quitarBotonCargando(btnGuardar);
       if (resultado.campo) {
         mostrarErrores(resultado);
       } else {
@@ -257,12 +275,8 @@ document.addEventListener('DOMContentLoaded', () => {
     pintarResumen();
     mostrarToast('Datos actualizados correctamente.');
 
-    // El botón se deshabilita un instante para evitar doble envío.
-    btnGuardar.disabled = true;
-    btnGuardar.classList.add('opacity-50', 'cursor-not-allowed');
-    setTimeout(() => {
-      btnGuardar.disabled = false;
-      btnGuardar.classList.remove('opacity-50', 'cursor-not-allowed');
-    }, 1200);
+    // T12.2: el botón conserva el estado de carga 1200ms como cooldown
+    // anti doble envío y luego se restaura a su contenido original.
+    setTimeout(() => quitarBotonCargando(btnGuardar), 1200);
   });
 });

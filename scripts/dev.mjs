@@ -55,20 +55,39 @@ const clients = new Set();
 
 /* -------------------------------------------------------------------------- */
 /* 1) Watch de Tailwind                                                        */
+/*    NO_WATCH=1 (tests E2E): no se spawnea el watcher — la suite necesita     */
+/*    solo el servidor estático y usa el dist/app.css ya compilado             */
+/*    (`test:e2e` ejecuta `pnpm build` antes). Motivo doble: (1) un watcher    */
+/*    por ejecución es CPU muerta en máquinas justas; (2) DOS watchers         */
+/*    (el del `pnpm dev` del usuario + el de la suite) podían entrar en bucle  */
+/*    de rebuild cruzado sobre dist/app.css, asfixiando la CPU de la suite.    */
 /* -------------------------------------------------------------------------- */
-const tw = spawn(
-  'pnpm',
-  ['exec', 'tailwindcss', '-i', 'src/styles/app.css', '-o', 'dist/app.css', '--watch', '--minify'],
-  {
-    cwd: ROOT,
-    stdio: 'inherit',
-    shell: true, // necesario en Windows para lanzar el shim .cmd de pnpm
-  }
-);
-tw.on('exit', (code) => {
-  console.error(`[dev] Tailwind watch terminó con código ${code}`);
-  process.exit(code ?? 1);
-});
+const SIN_WATCH = process.env.NO_WATCH === '1';
+let tw = null;
+if (!SIN_WATCH) {
+  tw = spawn(
+    'pnpm',
+    [
+      'exec',
+      'tailwindcss',
+      '-i',
+      'src/styles/app.css',
+      '-o',
+      'dist/app.css',
+      '--watch',
+      '--minify',
+    ],
+    {
+      cwd: ROOT,
+      stdio: 'inherit',
+      shell: true, // necesario en Windows para lanzar el shim .cmd de pnpm
+    }
+  );
+  tw.on('exit', (code) => {
+    console.error(`[dev] Tailwind watch terminó con código ${code}`);
+    process.exit(code ?? 1);
+  });
+}
 
 /* -------------------------------------------------------------------------- */
 /* 3) Livereload: fs.watch (recursivo) con debounce → avisa por SSE             */
@@ -185,8 +204,14 @@ server.listen(PORT, () => {
   console.log('──────────────────────────────────────────────');
   console.log(' Web-Manual · desarrollo (pnpm dev)');
   console.log(` → http://localhost:${PORT}`);
-  console.log('  · Tailwind watch activo → dist/app.css');
-  console.log('  · Livereload activo (SSE)');
+  console.log(
+    SIN_WATCH
+      ? '  · Tailwind watch desactivado (NO_WATCH)'
+      : '  · Tailwind watch activo → dist/app.css'
+  );
+  console.log(
+    LIVERELOAD ? '  · Livereload activo (SSE)' : '  · Livereload desactivado (NO_LIVERELOAD)'
+  );
   console.log('──────────────────────────────────────────────');
 });
 
@@ -196,7 +221,7 @@ server.listen(PORT, () => {
 function shutdown() {
   for (const res of clients) res.end();
   server.close();
-  if (!tw.killed) tw.kill();
+  if (tw && !tw.killed) tw.kill();
   process.exit(0);
 }
 process.on('SIGINT', shutdown);

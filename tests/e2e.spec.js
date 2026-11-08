@@ -334,3 +334,131 @@ test.describe('regresión del enunciado (T10.2)', () => {
     expect(nombres).toContain(nombreFavorito.trim());
   });
 });
+
+test.describe('estados de carga y vacíos (Fase 12)', () => {
+  test('register: el botón entra en modo cargando (aria-busy) hasta redirigir', async ({
+    page,
+  }) => {
+    await page.goto('/register.html');
+    await page.fill('#nombre', 'Rick');
+    await page.fill('#apellido', 'Sanchez');
+    await page.fill('#correo', `carga.${SUFIJO}@dimension.test`);
+    await page.fill('#password', USUARIO.password);
+    await page.fill('#confirm_password', USUARIO.password);
+
+    // Click programático ATÓMICO: `page.click` espera la navegación que
+    // dispara el submit y, al resolver, el registro ya redirigió a
+    // login.html => el botón ya no existe (fallo determinista visto en
+    // los 3 viewports). Aquí el clic y la lectura del estado ocurren en
+    // la MISMA tarea: el modo carga se activa de forma síncrona en el
+    // handler, así que el estado ya está puesto al leerlo, sin carreras.
+    const estado = await page.evaluate(() => {
+      document.getElementById('btn_register').click();
+      const boton = document.getElementById('btn_register');
+      return { busy: boton.getAttribute('aria-busy'), disabled: boton.disabled };
+    });
+    expect(estado.busy).toBe('true');
+    expect(estado.disabled).toBe(true);
+    // T12.2: el estado de carga se sostiene hasta la redirección.
+    await expect(page).toHaveURL(/login\.html/, { timeout: 5_000 });
+  });
+
+  test('login: un fallo restaura el botón y permite reintentar', async ({ page }) => {
+    await registrar(page); // termina en /login.html sin sesión
+
+    await page.fill('#correo', USUARIO.correo);
+    await page.fill('#password', `Incorrecta$x`);
+    await page.click('button[type="submit"]');
+    await expect(page.locator('#error-general')).toBeVisible();
+
+    // T12.2: quitarBotonCargando en el catch => sin aria-busy ni disabled.
+    const boton = page.locator('button[type="submit"]');
+    await expect(boton).not.toHaveAttribute('aria-busy', 'true');
+    await expect(boton).toBeEnabled();
+
+    // Y el reintento con credenciales correctas funciona (flujo completo).
+    await page.fill('#password', USUARIO.password);
+    await page.click('button[type="submit"]');
+    await expect(page).toHaveURL(/index\.html/, { timeout: 5_000 });
+  });
+
+  test('favoritos vacío ofrece CTA "Explorar catálogo" que navega', async ({ page }) => {
+    await registrar(page);
+    await iniciarSesion(page);
+    await page.goto('/favorites.html');
+
+    const vacio = page.locator('[data-zona="vacio"]');
+    await expect(vacio).toBeVisible();
+    await expect(vacio).toContainText('Aún no tienes favoritos');
+    await expect(vacio.getByRole('button', { name: 'Explorar catálogo' })).toBeVisible();
+
+    await vacio.getByRole('button', { name: 'Explorar catálogo' }).click();
+    await expect(page).toHaveURL(/index\.html/);
+  });
+
+  test('catálogo sin resultados: CTA "Limpiar búsqueda y filtros" recupera la lista', async ({
+    page,
+  }) => {
+    await registrar(page);
+    await iniciarSesion(page);
+    await expect(page.locator('article[data-id]').first()).toBeVisible({ timeout: 15_000 });
+
+    await page.fill('#buscar', 'zzzzzz');
+    await page.press('#buscar', 'Enter');
+
+    const vacio = page.locator('[data-zona="vacio"]');
+    await expect(vacio).toBeVisible({ timeout: 10_000 });
+    await expect(vacio).toContainText('Sin resultados');
+    const cta = vacio.getByRole('button', { name: 'Limpiar búsqueda y filtros' });
+    await expect(cta).toBeVisible();
+
+    // Clic en el CTA => reset de la barra + vuelta al catálogo completo.
+    await cta.click();
+    await expect(page.locator('#buscar')).toHaveValue('');
+    await expect(page.locator('article[data-id]').first()).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('cards: clase group (zoom de imagen) + cue "abrir expediente"', async ({ page }) => {
+    await registrar(page);
+    await iniciarSesion(page);
+    const card = page.locator('article[data-id]').first();
+    await expect(card).toBeVisible({ timeout: 15_000 });
+    // T12.3: sin "group" el group-hover de la imagen nunca se disparaba.
+    await expect(card).toHaveClass(/group/);
+    await expect(card.locator('.tubo-card-cue')).toContainText('abrir expediente');
+    await expect(card.locator('.tubo-card-portal')).toHaveCount(1);
+  });
+
+  test('mi cuenta: guardar deja el botón en cooldown y se restaura', async ({ page }) => {
+    await registrar(page);
+    await iniciarSesion(page);
+    await page.goto('/mi_account.html');
+
+    await page.fill('#nombre', 'Morty');
+
+    // Observador instalado ANTES del clic: el modo carga dura solo ~1200ms
+    // (cooldown anti doble envío) y un toBeDisabled con polling externo se
+    // lo salta si la máquina está saturada (fallo visto en los 3
+    // viewports). El MutationObserver vive en la página y registra el
+    // estado en el MISMO tick de microtareas en que se pinta, sin carreras.
+    await page.evaluate(() => {
+      window.__modoCargaVisto = false;
+      const boton = document.getElementById('btn_guardar');
+      new MutationObserver(() => {
+        if (boton.disabled && boton.getAttribute('aria-busy') === 'true') {
+          window.__modoCargaVisto = true;
+        }
+      }).observe(boton, { attributes: true });
+    });
+
+    await page.click('#btn_guardar');
+
+    // T12.2: fin del cooldown = estado ESTABLE (botón restaurado); se
+    // espera sin carreras y luego se confirma que el modo carga SÍ se
+    // activó (capturado por el observer, no por suerte de timing).
+    const boton = page.locator('#btn_guardar');
+    await expect(boton).toBeEnabled({ timeout: 8_000 });
+    await expect(boton).not.toHaveAttribute('aria-busy', 'true');
+    expect(await page.evaluate(() => window.__modoCargaVisto)).toBe(true);
+  });
+});

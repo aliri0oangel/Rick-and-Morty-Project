@@ -62,6 +62,7 @@ export function crearZonaPersonajes({ alReintentar } = {}) {
 
   /**
    * Pinta N skeletons de tarjeta en la zona de carga.
+   * El índice desfasa el shimmer de cada uno (T12.2: lote orgánico).
    * @param {number} [cantidad=8]
    * @returns {void}
    */
@@ -69,7 +70,7 @@ export function crearZonaPersonajes({ alReintentar } = {}) {
     // Fragment: una sola inserción al DOM por lote (menos reflows).
     const fragmento = document.createDocumentFragment();
     for (let i = 0; i < cantidad; i++) {
-      fragmento.appendChild(crearSkeletonCard());
+      fragmento.appendChild(crearSkeletonCard(i));
     }
     zonas.cargando.replaceChildren(fragmento);
   };
@@ -93,10 +94,12 @@ export function crearZonaPersonajes({ alReintentar } = {}) {
   };
 
   /**
-   * Compone y muestra el estado vacío (ilustración opcional, Fase 3).
+   * Compone y muestra el estado vacío (ilustración opcional, Fase 3;
+   * acciones CTA contextuales, T12.1 — se propagan a crearEstadoVacio).
    * @param {string} [titulo]
    * @param {string} [mensaje]
-   * @param {{ilustracion?: 'favoritos'|'busqueda'}} [extras]
+   * @param {{ilustracion?: 'favoritos'|'busqueda',
+   *          acciones?: Array<{texto: string, variante?: string, alClic: () => void}>}} [extras]
    * @returns {void}
    */
   const setVacio = (titulo, mensaje, extras = {}) => {

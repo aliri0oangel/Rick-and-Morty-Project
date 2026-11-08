@@ -43,6 +43,14 @@
   --info-soft: color-mix(in srgb, var(--info) 14%, transparent);
   --danger-soft: color-mix(in srgb, var(--danger) 12%, transparent);
 
+  /* Superficie "cristal" (glassmorphism suave — formularios de acceso):
+     relleno translúcido del panel para que se vea difuminado el lienzo
+     de fondo (backdrop-filter en .glass-card). El 62% de opacidad mantiene
+     AA sobre el composite: pares validados en scripts/check-contrast.mjs. */
+  --glass-fill: color-mix(in srgb, var(--app-panel) 62%, transparent);
+  --glass-line: color-mix(in srgb, var(--app-line) 80%, transparent);
+  --glass-edge: rgb(255 255 255 / 0.7); /* filo de luz interior (vidrio) */
+
   /* Efecto firma: intensidad de los overlays CRT (scanlines/viñeta) */
   --fx: 0.15;
 }
@@ -70,6 +78,12 @@
   --brand-soft: color-mix(in srgb, var(--brand) 16%, transparent);
   --info-soft: color-mix(in srgb, var(--info) 16%, transparent);
   --danger-soft: color-mix(in srgb, var(--danger) 14%, transparent);
+
+  /* Superficie "cristal" (glassmorphism — misma semántica que :root;
+     el filo de luz es ámbar tenue para coherencia con el glow CRT). */
+  --glass-fill: color-mix(in srgb, var(--app-panel) 62%, transparent);
+  --glass-line: color-mix(in srgb, var(--app-line) 80%, transparent);
+  --glass-edge: color-mix(in srgb, var(--app-ink) 14%, transparent);
 
   --fx: 1; /* overlays CRT a intensidad completa */
 }

@@ -5,6 +5,9 @@ node_modules/
 dist/*
 !dist/app.css
 
+# Artefacto de despliegue (Netlify): se regenera con `pnpm build:deploy`
+public/
+
 # Reportes de pruebas / auditorías (Fases 9-10)
 playwright-report/
 test-results/

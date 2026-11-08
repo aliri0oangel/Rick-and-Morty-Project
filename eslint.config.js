@@ -16,6 +16,7 @@ export default [
       'reportes/**',
       'playwright-report/**',
       'test-results/**',
+      'public/**', // artefacto de despliegue (copia de src/ — lo genera prepare-deploy.mjs)
     ],
   },
 

@@ -81,8 +81,12 @@
     color: var(--app-ink);
   }
   .btn-ghost:hover:not(:disabled) {
-    /* M1: sin "borde remarcado" al hover (solo tinte de texto). */
+    /* M1: sin "borde remarcado" al hover (solo tinte de texto).
+       T12.4: se añade un tinte de fondo MUY suave (10%) para coherencia
+       con .btn-icono y los ítems del menú de cuenta; el borde sigue
+       quieto (M1 intacto). */
     color: var(--brand);
+    background-color: color-mix(in srgb, var(--brand) 10%, transparent);
   }
 
   /* ==========================================================================
@@ -204,11 +208,88 @@
       box-shadow var(--trans) var(--ease);
   }
 
+  /* ==========================================================================
+     MODIFICADOR "CRISTAL" — glassmorphism suave (login/registro)
+     Acumulable con .tubo-card (solo formularios de acceso, que se pintan
+     sobre el lienzo de malla): relleno translúcido del tema + blur del
+     fondo + filo de luz interior. La opacidad del fill (62%, tokens.css)
+     está fijada por el contraste AA de ink/dim/brand sobre el composite
+     (pares "… sobre glass" de check-contrast.mjs). M1: sin lift en hover.
+     ========================================================================== */
+  .tubo-card.glass-card {
+    background-color: var(--glass-fill);
+    border-color: var(--glass-line);
+    -webkit-backdrop-filter: blur(12px) saturate(130%);
+    backdrop-filter: blur(12px) saturate(130%);
+    /* Filo de luz arriba (vidrio) + sombra ambiental suave. */
+    box-shadow:
+      inset 0 1px 0 var(--glass-edge),
+      0 16px 40px rgb(0 0 0 / 0.18);
+  }
+
+  /* Fallback sin backdrop-filter (p. ej. sin prefijo -webkit): superficie
+     opaca del tema => legibilidad intacta aunque no haya blur. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .tubo-card.glass-card {
+      background-color: var(--app-panel);
+    }
+  }
+
   /* Excepción cards (M1): lift sutil + glow ámbar al hover. */
   article[data-id]:hover {
     transform: translateY(-3px);
     border-color: var(--brand);
     box-shadow: var(--glow-brand);
+  }
+
+  /* Paridad teclado (T12.3): foco con el MISMO tratamiento de borde/
+     glow que hover (sin lift: la card no se desplaza bajo el foco). */
+  article[data-id]:focus-within {
+    border-color: var(--brand);
+    box-shadow: var(--glow-brand);
+  }
+
+  /* Portal glow dinámico (T12.3): resplandor radial ámbar que sigue al
+     cursor dentro de la card. --mx/--my los escribe characters.js desde
+     UN listener delegado por grid (throttle rAF). Solo puntero real y
+     sin reduced-motion: en táctil/movimiento reducido la capa no se pinta. */
+  .tubo-card-portal {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .tubo-card-portal {
+      opacity: 0;
+      transition: opacity 200ms ease-out;
+      background: radial-gradient(
+        240px circle at var(--mx, 50%) var(--my, 50%),
+        color-mix(in srgb, var(--brand) 16%, transparent),
+        transparent 68%
+      );
+    }
+    article[data-id]:hover .tubo-card-portal,
+    article[data-id]:focus-within .tubo-card-portal {
+      opacity: 1;
+    }
+  }
+
+  /* Cue de affordance (T12.3): "abrir expediente ›" como microcopy en
+     la esquina de la card al hover/focus — refuerza que ES clicable.
+     Decorativo (aria-hidden): el cursor pointer y el foco ya lo dicen. */
+  .tubo-card-cue {
+    position: absolute;
+    right: 0.85rem;
+    bottom: 0.5rem;
+    opacity: 0;
+    pointer-events: none;
+  }
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    article[data-id]:hover .tubo-card-cue,
+    article[data-id]:focus-within .tubo-card-cue {
+      opacity: 0.85;
+      transition: opacity 200ms ease-out;
+    }
   }
 
   /* Rendimiento (T5.1): el renderizado de cards fuera de pantalla se
@@ -221,6 +302,9 @@
 
   /* ==========================================================================
      SKELETON — shimmer muy sutil sobre la superficie panel (§3.5)
+     animation-delay (T12.2): cada skeleton desfasa su fase vía
+     --skeleton-delay (lo pinta crearSkeletonCard por índice) => el lote
+     no "respire" sincronizado (carga percibida más orgánica).
      ========================================================================== */
   .skeleton {
     background-color: var(--app-panel);
@@ -232,6 +316,7 @@
     );
     background-size: 200% 100%;
     animation: skeleton-shimmer 1.4s linear infinite;
+    animation-delay: var(--skeleton-delay, 0s);
     border-radius: var(--r-ctl);
   }
   @keyframes skeleton-shimmer {
@@ -395,6 +480,64 @@
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--app-dim);
+  }
+
+  /* ==========================================================================
+     FLICKER DE ILUSTRACIÓN VACÍA (T12.1) — la TV del estado vacío
+     parpadea como un tubo CRT desajustado (~5s, microcortes <200ms).
+     Solo con movimiento permitido: el guard global de reduced-motion
+     aplana duraciones y aquí se activa vía no-preference (sin keyframes
+     => la ilustración conserva su opacidad base de la utility opacity-70).
+     ========================================================================== */
+  @media (prefers-reduced-motion: no-preference) {
+    .estado-vacio-ilustr {
+      animation: tubo-flicker 5s ease-in-out infinite;
+    }
+    @keyframes tubo-flicker {
+      0%,
+      90%,
+      100% {
+        opacity: 0.7;
+      }
+      92% {
+        opacity: 0.4;
+      }
+      94% {
+        opacity: 0.75;
+      }
+      96% {
+        opacity: 0.5;
+      }
+      98% {
+        opacity: 0.72;
+      }
+    }
+  }
+
+  /* ==========================================================================
+     ENLACES DE NAV CON BARRIDO DE SUBRAYADO (T12.4) — hover/focus
+     dibujan una línea ámbar de izquierda a derecha (transform: scaleX).
+     Sin movimiento permitido el guard global lo aplana a cambio
+     instantáneo: el estado final sigue siendo visible.
+     ========================================================================== */
+  .enlace-nav {
+    position: relative;
+  }
+  .enlace-nav::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 1px;
+    background-color: var(--brand);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--trans) var(--ease);
+  }
+  .enlace-nav:hover::after,
+  .enlace-nav:focus-visible::after {
+    transform: scaleX(1);
   }
 
   /* ==========================================================================

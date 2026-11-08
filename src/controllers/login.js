@@ -1,7 +1,7 @@
 import { loginUser, rutaPublica, RUTAS } from '../services/auth.js';
 import { guardarSesion } from '../core/storage.js';
 import { leerCookie, guardarRecordarCorreo } from '../core/cookies.js';
-import { crearControlPassword } from '../ui/components.js';
+import { crearControlPassword, ponerBotonCargando, quitarBotonCargando } from '../ui/components.js';
 import { COOKIE_KEYS, MAX_INTENTOS_LOGIN, BLOQUEO_INTENTOS_MIN } from '../config/config.js';
 import { inicializarMallaCuantica } from '../ui/interactive-mesh.js';
 
@@ -142,6 +142,10 @@ document.addEventListener('DOMContentLoaded', () => {
         hudEstado.className = 'text-brand font-semibold';
       }
 
+      // T12.2: spinner + aria-busy + ancho estable mientras se autentica
+      // (se RESTAURA en el catch; en el éxito queda hasta la redirección).
+      ponerBotonCargando(btn_login, 'Conectando portal...');
+
       /* --- 2) Autenticación (async por el hash) --- */
       const resultado = await loginUser(correo, password);
 
@@ -152,8 +156,8 @@ document.addEventListener('DOMContentLoaded', () => {
       /* --- 3) Éxito --- */
       limpiarIntentos(correo);
       ocultarError();
-      btn_login.disabled = true;
-      btn_login.classList.add('opacity-50', 'cursor-not-allowed');
+      // El botón conserva el estado de carga durante la pausa de redirect
+      // (T12.2): disabled + spinner ya vienen de ponerBotonCargando.
 
       /* --------------------------------------------------------------
        * Cookie de preferencia: crear/borrar según la casilla, SIEMPRE
@@ -170,6 +174,8 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = RUTAS.index;
       }, 1000);
     } catch (error) {
+      // T12.2: se restaura el botón para permitir el reintento.
+      quitarBotonCargando(btn_login);
       const { bloqueado, restantes } = registrarIntentoFallido(correo);
       mostrarError(
         bloqueado

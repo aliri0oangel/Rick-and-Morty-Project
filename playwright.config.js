@@ -11,15 +11,27 @@
 
 import { defineConfig, devices } from '@playwright/test';
 
+// Puerto del server de tests: 4173 por defecto (el mismo de scripts/dev.mjs).
+// PORT permite desviar la suite cuando ese puerto ya lo ocupa un `pnpm dev`
+// activo: reuseExistingServer sigue en false por diseño (anti-flaky), así
+// que la alternativa válida es OTRO puerto, no reutilizar el server externo.
+const PUERTO = Number(process.env.PORT) || 4173;
+
 export default defineConfig({
   testDir: './tests',
   timeout: 30_000,
   expect: { timeout: 8_000 },
   fullyParallel: true,
+  // 1 worker por defecto: la suite corre en máquinas justas (p. ej. 4 hilos
+  // compartidos con el navegador de escritorio del usuario). Con 2+ workers
+  // los Chromium se pelean por CPU y tests que pasaban solos fallaban en
+  // paralelo (fetches de la API que nunca completaban y timeouts en
+  // cadena). PW_WORKERS permite ampliarlo en CI con holgura de CPU.
+  workers: Number(process.env.PW_WORKERS) || 1,
   retries: process.env.CI ? 1 : 0,
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'reportes/playwright' }]],
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: `http://localhost:${PUERTO}`,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
@@ -39,9 +51,13 @@ export default defineConfig({
   ],
   webServer: {
     command: 'node scripts/dev.mjs',
-    url: 'http://localhost:4173/index.html',
+    url: `http://localhost:${PUERTO}/index.html`,
     // Sin livereload: sus recargas espurios (tmp/antivirus) rompían tests.
-    env: { ...process.env, NO_LIVERELOAD: '1' },
+    // Sin watch de Tailwind: la suite usa el dist/app.css ya compilado
+    // (`test:e2e` ejecuta `pnpm build` antes) y así NO se spawnea un
+    // segundo watcher que podía entrar en bucle de rebuild cruzado con el
+    // del `pnpm dev` del usuario sobre dist/app.css (CPU al 100%).
+    env: { ...process.env, NO_LIVERELOAD: '1', NO_WATCH: '1' },
     // Nunca reutilizar un server externo: un dev server con livereload
     // activo (o con otro código) introduce tests flaky.
     reuseExistingServer: false,

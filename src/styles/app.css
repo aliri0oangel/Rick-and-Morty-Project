@@ -36,6 +36,15 @@
 @source '../../mi_account.html';
 @source '../**/*.js';
 
+/* Exclusión del build (`@source not`, Tailwind v4.1+): dist/ NUNCA es
+   fuente de detección. Motivo real: dist/app.css se versiona (no está en
+   .gitignore) y DOS watchers de Tailwind coexisten a veces (el `pnpm dev`
+   del usuario + el de la suite Playwright). Cada uno veía la escritura
+   del otro sobre dist/app.css como un cambio de fuente y reconstruía en
+   bucle cruzado → CPU saturada durante toda la suite (causa raíz de los
+   timeouts masivos de la Fase 12). */
+@source not '../dist';
+
 /* Safelist de utilities semánticas (Fase 1 / T1.2): Tailwind JIT solo emite
    lo que detecta en los sources; estas utilities se fuerzan para que existan
    desde ya (CSS a mano, Fase 3 y tests de tokens sin depender del markup). */

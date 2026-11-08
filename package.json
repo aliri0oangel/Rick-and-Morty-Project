@@ -7,14 +7,15 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "build": "tailwindcss -i src/styles/app.css -o dist/app.css --minify",
+    "build:deploy": "pnpm build && node scripts/prepare-deploy.mjs",
     "watch": "tailwindcss -i src/styles/app.css -o dist/app.css --watch --minify",
     "lint": "eslint .",
     "check:imports": "node scripts/check-imports.mjs",
     "check:contrast": "node scripts/check-contrast.mjs",
     "audit:budgets": "node scripts/audit-budgets.mjs",
-    "test:e2e": "playwright test",
-    "test:a11y": "playwright test tests/a11y.spec.js",
-    "test:responsive": "playwright test tests/responsive.spec.js",
+    "test:e2e": "pnpm build && playwright test",
+    "test:a11y": "pnpm build && playwright test tests/a11y.spec.js",
+    "test:responsive": "pnpm build && playwright test tests/responsive.spec.js",
     "audit:lighthouse": "npx --yes lighthouse http://localhost:4173/index.html --preset=perf --form-factor=mobile --screenEmulation.mobile --quiet --output=json --output-path=./reportes/lighthouse-index.json || echo \"Lighthouse requiere el servidor dev corriendo (pnpm dev) y red para npx.\"",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

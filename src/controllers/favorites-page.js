@@ -14,6 +14,7 @@ import { obtenerSesion } from '../core/storage.js';
 import {
   renderizarPersonajes,
   montarGridDelegacion,
+  montarSeguimientoCursor,
   pintarBotonFavorito,
 } from '../ui/characters.js';
 import { crearZonaPersonajes } from '../ui/page-states.js';
@@ -38,14 +39,18 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('zona-favoritos')?.replaceWith(zona.nodo);
 
   /**
-   * Muestra el estado vacío con la ilustración CRT de favoritos (T3.3).
+   * Muestra el estado vacío con la ilustración CRT de favoritos (T3.3)
+   * y su CTA "Explorar catálogo" (T12.1: la salida natural del vacío).
    * @returns {void}
    */
   const mostrarVacio = () =>
     zona.setVacio(
       'Aún no tienes favoritos',
       'Haz clic en el ícono ♥ de cualquier personaje del catálogo.',
-      { ilustracion: 'favoritos' }
+      {
+        ilustracion: 'favoritos',
+        acciones: [{ texto: 'Explorar catálogo', alClic: () => navegar(RUTAS.index) }],
+      }
     );
 
   /* ---------------- Pintado inicial desde LocalStorage ---------------- */
@@ -112,4 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
       navegar(`${RUTAS.detalle}?id=${encodeURIComponent(personaje.id)}`);
     },
   });
+
+  // Portal glow dinámico (T12.3): mismo seguimiento que el catálogo.
+  montarSeguimientoCursor(zona.grid);
 });

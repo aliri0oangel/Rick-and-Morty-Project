@@ -123,12 +123,17 @@ export function pintarBotonFavorito(boton, activo) {
 export function crearCardPersonaje(datos, esFavorito) {
   const nodo = document.createElement('div');
   // plantilla estática propia (cero datos de terceros en el string)
+  // T12.3: "group" es OBLIGATORIA para que group-hover de la imagen
+  // funcione (bug: sin ella el zoom nunca se disparaba); "relative" da
+  // ancla al cue "abrir expediente". El contenedor de imagen usa
+  // .skeleton (T12.2) como placeholder mientras la imagen carga.
   nodo.innerHTML = `
-    <article class="tubo-card flex flex-col cursor-pointer" data-id="">
-      <div class="relative w-full aspect-[4/3] bg-app overflow-hidden">
+    <article class="tubo-card group relative flex flex-col cursor-pointer" data-id="">
+      <div class="relative w-full aspect-[4/3] skeleton rounded-none overflow-hidden">
         <img data-campo="imagen" alt="" loading="lazy" decoding="async"
              class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"></img>
       </div>
+      <div class="tubo-card-portal" aria-hidden="true"></div>
       <div class="flex-1 p-4 flex flex-col justify-between gap-1.5">
         <div class="flex items-center justify-between gap-2">
           <h4 data-campo="nombre" class="font-semibold text-ink truncate"></h4>
@@ -137,6 +142,7 @@ export function crearCardPersonaje(datos, esFavorito) {
         <p data-campo="especie" class="text-sm text-dim truncate"></p>
         <p data-campo="meta" class="text-xs text-dim truncate"></p>
       </div>
+      <span class="tubo-card-cue microcopy" aria-hidden="true">abrir expediente &rsaquo;</span>
     </article>`;
   const card = nodo.querySelector('article');
   card.dataset.id = String(datos.id);
@@ -155,6 +161,16 @@ export function crearCardPersonaje(datos, esFavorito) {
   // Imagen ya cacheada por el navegador: no se espera al evento load.
   if (img.complete) img.classList.remove('opacity-0');
 
+  // Placeholder .skeleton (T12.2): se RETIRA al cargar; sin esto el
+  // shimmer corre SIN FIN en cada card cargada (CPU constante, bug real).
+  const marcoImagen = img.parentElement;
+  const retirarShimmer = () => marcoImagen.classList.remove('skeleton');
+  if (img.complete) retirarShimmer();
+  else {
+    img.addEventListener('load', retirarShimmer, { once: true });
+    img.addEventListener('error', retirarShimmer, { once: true });
+  }
+
   // Badge de estado (componente reutilizado, no clases sueltas).
   card.querySelector('[data-campo="estado"]').replaceChildren(crearBadgeEstado(datos.estado));
 
@@ -170,11 +186,15 @@ export function crearCardPersonaje(datos, esFavorito) {
 
 /**
  * Tarjeta fantasma con la MISMA forma que CharacterCard (sin desplazamiento).
+ * @param {number} [indice=0] - Posición en el lote: desfaza el shimmer
+ *        (T12.2) para que los skeletons no "respiren" sincronizados.
  * @returns {HTMLElement}
  */
-export function crearSkeletonCard() {
+export function crearSkeletonCard(indice = 0) {
   const nodo = document.createElement('div');
   nodo.setAttribute('aria-hidden', 'true');
+  // Fase del shimmer por skeleton (carga percibida más orgánica).
+  nodo.style.setProperty('--skeleton-delay', `${(indice % 8) * 0.12}s`);
   // Nota: sin "!" => las utilities ganan a @layer components (Tailwind v4),
   // así cursor/rounded sobre escriben .tubo-card/.skeleton sin importancia forzada.
   nodo.innerHTML = `
@@ -212,16 +232,62 @@ export function crearSkeletonDetalle() {
 }
 
 /* ==================================================================
+   CARGA EN BOTONES (T12.2) — spinner + aria-busy con ancho estable
+   ================================================================== */
+
+/**
+ * Pone un botón en modo "cargando": spinner + texto contextual,
+ * aria-busy (lectores de pantalla) y disabled (anti doble envío).
+ * El ancho se congela en minWidth para que spinner+texto no
+ * redimensionen el botón (checklist de diseño #6: sin saltos).
+ * Llamar SIEMPRE con quitarBotonCargando en el catch (y en el éxito
+ * solo si no se navega: si hay redirect, se queda cargando).
+ * @param {HTMLButtonElement} boton - Botón a bloquear.
+ * @param {string} [texto='Procesando...'] - Etiqueta de progreso.
+ * @returns {void}
+ */
+export function ponerBotonCargando(boton, texto = 'Procesando...') {
+  if (!boton || boton.dataset.cargando === 'true') return; // idempotente
+  boton.dataset.cargando = 'true';
+  boton.dataset.contenidoOriginal = boton.innerHTML;
+  boton.style.minWidth = `${boton.offsetWidth}px`;
+  boton.disabled = true;
+  boton.setAttribute('aria-busy', 'true');
+  boton.innerHTML = icono('loader', 'w-4 h-4 animate-spin');
+  const spanTexto = document.createElement('span');
+  spanTexto.textContent = texto;
+  boton.appendChild(spanTexto);
+}
+
+/**
+ * Restaura el botón a su contenido original (idempotente: si no estaba
+ * en modo carga, no hace nada).
+ * @param {HTMLButtonElement} boton - Botón a normalizar.
+ * @returns {void}
+ */
+export function quitarBotonCargando(boton) {
+  if (!boton || boton.dataset.cargando !== 'true') return;
+  delete boton.dataset.cargando;
+  boton.removeAttribute('aria-busy');
+  boton.disabled = false;
+  boton.innerHTML = boton.dataset.contenidoOriginal || '';
+  delete boton.dataset.contenidoOriginal;
+  boton.style.minWidth = '';
+}
+
+/* ==================================================================
    ESTADOS DE PÁGINA (vacío / error) — T2.3
    ================================================================== */
 
 /**
- * Mensaje central "sin resultados", con ilustración opcional (Fase 3).
+ * Mensaje central "sin resultados", con ilustración opcional (Fase 3)
+ * y acciones CTA contextuales (T12.1).
  * @param {{titulo: string, mensaje?: string,
- *          ilustracion?: 'favoritos'|'busqueda'}} opciones
+ *          ilustracion?: 'favoritos'|'busqueda',
+ *          acciones?: Array<{texto: string, variante?: string, alClic: () => void}>}} opciones
  * @returns {HTMLElement}
  */
-export function crearEstadoVacio({ titulo, mensaje, ilustracion } = {}) {
+export function crearEstadoVacio({ titulo, mensaje, ilustracion, acciones } = {}) {
   const nodo = document.createElement('div');
   nodo.className = 'pt-12 text-center text-dim space-y-3';
   if (ilustracion) {
@@ -229,7 +295,9 @@ export function crearEstadoVacio({ titulo, mensaje, ilustracion } = {}) {
     // setAttribute y NO className: en SVGElement className es de solo
     // lectura (SVGAnimatedString) y asignarlo lanza TypeError, rompiendo
     // TODO el estado vacío (bug real detectado en los tests T10.2).
-    svg.setAttribute('class', 'mx-auto text-dim opacity-70');
+    // estado-vacio-ilustr (T12.1): flicker de tubo CRT (keyframes
+    // anulados por el guard global de reduced-motion => opacidad base).
+    svg.setAttribute('class', 'mx-auto text-dim opacity-70 estado-vacio-ilustr');
     svg.style.width = '140px';
     svg.style.height = 'auto';
     nodo.appendChild(svg);
@@ -243,6 +311,26 @@ export function crearEstadoVacio({ titulo, mensaje, ilustracion } = {}) {
     pMsg.className = 'text-sm';
     pMsg.textContent = mensaje;
     nodo.appendChild(pMsg);
+  }
+
+  // Acciones CTA (T12.1): fila de botones bajo el mensaje. Los callbacks
+  // los inyecta la página (DIP): el componente no conoce rutas ni
+  // formularios. Variante por defecto btn-primary (es LA salida del vacío).
+  const listaAcciones = Array.isArray(acciones)
+    ? acciones.filter((accion) => accion?.texto && typeof accion.alClic === 'function')
+    : [];
+  if (listaAcciones.length > 0) {
+    const filaAcciones = document.createElement('div');
+    filaAcciones.className = 'flex flex-wrap justify-center gap-3 pt-3';
+    for (const accion of listaAcciones) {
+      const boton = document.createElement('button');
+      boton.type = 'button';
+      boton.className = `btn ${accion.variante || 'btn-primary'}`;
+      boton.textContent = accion.texto;
+      boton.addEventListener('click', accion.alClic);
+      filaAcciones.appendChild(boton);
+    }
+    nodo.appendChild(filaAcciones);
   }
   return nodo;
 }

@@ -1,0 +1,15 @@
+# Configuración de despliegue en Netlify (CI desde Git).
+#
+# NOTA — Netlify Drop (arrastrar y soltar) NO lee este fichero ni ejecuta
+# builds: para Drop ejecuta `pnpm build:deploy` en local y arrastra la
+# carpeta `public/`. Este netlify.toml cubre el flujo de despliegue
+# continuo por si se conecta el repo a Netlify más adelante.
+
+[build]
+  # Compila Tailwind y ensambla public/ con solo los ficheros de runtime.
+  command = "pnpm build:deploy"
+  publish = "public"
+
+[build.environment]
+  # Tailwind v4 exige Node >= 20; se fija la misma línea que local (engines).
+  NODE_VERSION = "24"

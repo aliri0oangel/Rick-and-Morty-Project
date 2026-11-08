@@ -230,3 +230,54 @@ export function montarGridDelegacion(grid, { alternarFavorito, abrirPersonaje })
     }
   });
 }
+
+/* ----------------------------------------------------------------
+ * Portal glow dinámico (T12.3) — UN listener delegado por grid:
+ * --mx/--my solo en la card bajo el cursor, 1 escritura/frame
+ * (throttle rAF) => coste constante por grid. En táctil o
+ * reduced-motion no se monta (este módulo no conoce el CSS).
+ * ---------------------------------------------------------------- */
+
+/** matchMedia cacheado en el montaje (el cambio de preferencia en vivo
+ *  se recoge en la siguiente carga de página; suficiente y sin listeners). */
+let motionPermitido = null;
+
+/**
+ * ¿Conviene hacer tracking de cursor? (puntero real + movimiento permitido)
+ * @returns {boolean}
+ */
+function hayPunteroConMotion() {
+  if (motionPermitido === null) {
+    motionPermitido =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(hover: hover) and (prefers-reduced-motion: no-preference)').matches;
+  }
+  return motionPermitido;
+}
+
+/**
+ * Monta el seguimiento de cursor para el portal glow de las cards.
+ * No-op en dispositivos táctiles o con reduced-motion.
+ * @param {HTMLElement} grid - Nodo grid de la página (inyectado).
+ * @returns {void}
+ */
+export function montarSeguimientoCursor(grid) {
+  if (!grid || !hayPunteroConMotion()) return;
+
+  let pendiente = false;
+  let ultimoEvento = null;
+
+  grid.addEventListener('pointermove', (evento) => {
+    ultimoEvento = evento;
+    if (pendiente) return; // ya hay un frame en vuelo con este puntero
+    pendiente = true;
+    requestAnimationFrame(() => {
+      pendiente = false;
+      const card = ultimoEvento.target.closest?.('article[data-id]');
+      if (!card) return;
+      const rect = card.getBoundingClientRect();
+      card.style.setProperty('--mx', `${ultimoEvento.clientX - rect.left}px`);
+      card.style.setProperty('--my', `${ultimoEvento.clientY - rect.top}px`);
+    });
+  });
+}
